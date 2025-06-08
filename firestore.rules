@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read/write their own profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Test results subcollection
+      match /testResults/{testId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if resource.data.privacy.showInLeaderboards == true;
+      }
+      
+      // Statistics subcollection
+      match /statistics/{statType} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if resource.data.privacy.showInLeaderboards == true;
+      }
+    }
+    
+    // Leaderboards - read only for authenticated users
+    match /leaderboards/{leaderboardType} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only server-side functions can write
+    }
+    
+    // Achievements - users can read/write their own
+    match /achievements/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Public user profiles for leaderboards
+    match /publicProfiles/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

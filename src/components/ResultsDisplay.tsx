@@ -35,24 +35,24 @@ export function ResultsDisplay({ result, onRestart }: ResultsDisplayProps) {
       {/* Main WPM and Accuracy on left, Graph on right */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
         {/* Left side - WPM and Accuracy - smaller space */}
-        <div className="space-y-6 px-2">
+        <div className="flex flex-col justify-center h-full px-2">
           <div className="animate-scale-in" style={{ animationDelay: '0.1s' }}>
             <div className="text-left">
-              <div className="text-sm opacity-75 mb-2" style={{ color: 'var(--theme-stats)' }}>
+              <div className="text-sm opacity-85 mb-2" style={{ color: 'var(--theme-stats)' }}>
                 wpm
               </div>
-              <div className="text-5xl font-bold" style={{ color: 'var(--theme-stats)' }}>
+              <div className="text-7xl font-bold" style={{ color: 'var(--theme-stats)' }}>
                 {result.wpm}
               </div>
             </div>
           </div>
-          
+
           <div className="animate-scale-in" style={{ animationDelay: '0.2s' }}>
             <div className="text-left">
-              <div className="text-sm opacity-75 mb-2" style={{ color: 'var(--theme-stats)' }}>
+              <div className="text-sm opacity-85 mb-2" style={{ color: 'var(--theme-stats)' }}>
                 acc
               </div>
-              <div className="text-5xl font-bold" style={{ color: 'var(--theme-stats)' }}>
+              <div className="text-7xl font-bold" style={{ color: 'var(--theme-stats)' }}>
                 {result.accuracy}%
               </div>
             </div>
@@ -111,10 +111,10 @@ export function ResultsDisplay({ result, onRestart }: ResultsDisplayProps) {
       </div>
 
       {/* Bottom section - Test info and detailed stats */}
-      <div className="space-y-8 px-4">
-        {/* Test type and detailed stats - Fixed spacing with grid */}
+      <div className="space-y-8">
+        {/* Test type and detailed stats - Full width grid */}
         <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 text-left justify-center max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 text-left w-full">
             <div>
               <div className="text-sm opacity-75 mb-1" style={{ color: 'var(--theme-stats)' }}>
                 test type
@@ -126,7 +126,7 @@ export function ResultsDisplay({ result, onRestart }: ResultsDisplayProps) {
                 english
               </div>
             </div>
-            
+
             <div>
               <div className="text-sm opacity-75 mb-1" style={{ color: 'var(--theme-stats)' }}>
                 raw
@@ -144,7 +144,7 @@ export function ResultsDisplay({ result, onRestart }: ResultsDisplayProps) {
                 {result.correct}/{result.incorrect}/{result.missed}/{result.charCount}
               </div>
             </div>
-            
+
             <div>
               <div className="text-sm opacity-75 mb-1" style={{ color: 'var(--theme-stats)' }}>
                 consistency
@@ -153,17 +153,18 @@ export function ResultsDisplay({ result, onRestart }: ResultsDisplayProps) {
                 {Math.round(result.accuracy * 0.9)}%
               </div>
             </div>
-            
+
             <div>
               <div className="text-sm opacity-75 mb-1" style={{ color: 'var(--theme-stats)' }}>
                 time
               </div>
               <div className="text-2xl font-bold" style={{ color: 'var(--theme-stats)' }}>
-                {Math.round(result.totalTime)}s
+                {(result.totalTime)}s
               </div>
             </div>
           </div>
         </div>
+
 
         {/* Action Buttons */}
         <div className="flex justify-center gap-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>

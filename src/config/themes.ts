@@ -15,7 +15,7 @@ export interface Theme {
 
 export const themes: Record<string, Theme> = {
   vantaBlack: {
-    label: 'Vanta Black',
+    label: 'Dark',
     background: '#2B2B2B',
     title: '#FFFFFF',
     typeBoxText: '#D4D4D4',
@@ -28,7 +28,7 @@ export const themes: Record<string, Theme> = {
     isDark: true
   },
   lightGray: {
-    label: 'Light Gray',
+    label: 'Light',
     background: '#FFFFFF',
     title: '#2B2B2B',
     typeBoxText: '#2B2B2B',
@@ -41,7 +41,7 @@ export const themes: Record<string, Theme> = {
     isDark: false
   },
   oceanDark: {
-    label: 'Ocean Dark',
+    label: 'Ocean',
     background: '#0F172A',
     title: '#38BDF8',
     typeBoxText: '#CBD5E1',
@@ -54,7 +54,7 @@ export const themes: Record<string, Theme> = {
     isDark: true
   },
   purpleHaze: {
-    label: 'Purple Haze',
+    label: 'Twilight',
     background: '#1A0B2E',
     title: '#A855F7',
     typeBoxText: '#C4B5FD',
@@ -67,7 +67,7 @@ export const themes: Record<string, Theme> = {
     isDark: true
   },
   sunsetOrange: {
-    label: 'Sunset Orange',
+    label: 'Sunset',
     background: '#FFF7ED',
     title: '#EA580C',
     typeBoxText: '#FB923C',
@@ -80,7 +80,7 @@ export const themes: Record<string, Theme> = {
     isDark: false
   },
   mintFresh: {
-    label: 'Mint Fresh',
+    label: 'Mint',
     background: '#F0FDF4',
     title: '#059669',
     typeBoxText: '#10B981',
@@ -93,7 +93,7 @@ export const themes: Record<string, Theme> = {
     isDark: false
   },
   cyberpunkNeon: {
-    label: 'Cyberpunk Neon',
+    label: 'Cyberpunk',
     background: '#0C0C0C',
     title: '#00FF9F',
     typeBoxText: '#00FFFF',
@@ -106,7 +106,7 @@ export const themes: Record<string, Theme> = {
     isDark: true
   },
   rosePetals: {
-    label: 'Rose Petals',
+    label: 'Rose',
     background: '#FFF1F2',
     title: '#E11D48',
     typeBoxText: '#F43F5E',
@@ -118,21 +118,8 @@ export const themes: Record<string, Theme> = {
     cursor: '#E11D48',
     isDark: false
   },
-  twilightPurple: {
-    label: 'Twilight Purple',
-    background: '#1E1B4B',
-    title: '#C084FC',
-    typeBoxText: '#DDD6FE',
-    stats: '#C084FC',
-    keyboardBackground: 'transparent',
-    keyBackground: '#312E81',
-    keyText: '#DDD6FE',
-    keyPressed: '#4338CA',
-    cursor: '#C084FC',
-    isDark: true
-  },
   arcticFrost: {
-    label: 'Arctic Frost',
+    label: 'Frost',
     background: '#F0F9FF',
     title: '#0284C7',
     typeBoxText: '#0369A1',
@@ -145,7 +132,7 @@ export const themes: Record<string, Theme> = {
     isDark: false
   },
   emberGlow: {
-    label: 'Ember Glow',
+    label: 'Ember',
     background: '#0C0A09',
     title: '#F97316',
     typeBoxText: '#FDBA74',
@@ -158,7 +145,7 @@ export const themes: Record<string, Theme> = {
     isDark: true
   },
   neonCity: {
-    label: 'Neon City',
+    label: 'Neon',
     background: '#0A0A0F',
     title: '#8B5CF6',
     typeBoxText: '#06B6D4',
@@ -171,7 +158,7 @@ export const themes: Record<string, Theme> = {
     isDark: true
   },
   goldenHour: {
-    label: 'Golden Hour',
+    label: 'Golden',
     background: '#FFFBEB',
     title: '#D97706',
     typeBoxText: '#F59E0B',
@@ -184,7 +171,7 @@ export const themes: Record<string, Theme> = {
     isDark: false
   },
   midnightOcean: {
-    label: 'Midnight Ocean',
+    label: 'Midnight',
     background: '#0F172A',
     title: '#06B6D4',
     typeBoxText: '#67E8F9',
