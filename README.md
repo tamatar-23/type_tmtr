@@ -1,73 +1,108 @@
-# Welcome to your Lovable project
+# Type.TMTR
 
-## Project info
+A modern, feature-rich typing game built with React and TypeScript, inspired by MonkeyType. Test and improve your typing speed and accuracy with detailed analytics and beautiful themes.
 
-**URL**: https://lovable.dev/projects/2f0d0e7b-846f-411e-b498-98012f3e74f5
+## Features
 
-## How can I edit this code?
+- **MonkeyType-style Typing Game**: Clean, distraction-free typing interface
+- **Real-time Performance Tracking**: Live WPM and accuracy calculations
+- **Detailed Analytics**: Comprehensive graphs and statistics for your typing sessions
+- **Multiple Themes**: Customize your typing experience with various color schemes
+- **User Profiles**: Create an account to track your progress over time
+- **Cloud Data Storage**: All your typing data is securely stored and synced across devices
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Frontend**: React with TypeScript
+- **Backend**: Firebase
+- **Database**: Firestore
+- **Authentication**: Firebase Auth
+- **Hosting**: Firebase Hosting
+- **Charts**: Chart.js / Recharts (for performance graphs)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/2f0d0e7b-846f-411e-b498-98012f3e74f5) and start prompting.
+## Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js (v16 or higher)
+- npm or yarn
+- Firebase account
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+1. Clone the repository
+```bash
+git clone https://github.com/tamatar-23/type_tmtr.git
+cd type_tmtr
 ```
 
-**Edit a file directly in GitHub**
+2. Install dependencies
+```bash
+npm install
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3. Set up Firebase
+    - Create a new Firebase project at [Firebase Console](https://console.firebase.google.com)
+    - Enable Firestore Database
+    - Enable Authentication (Email/Password)
+    - Copy your Firebase config
 
-**Use GitHub Codespaces**
+4. Create environment variables
+```bash
+# Create .env file in root directory
+REACT_APP_FIREBASE_API_KEY=your_api_key
+REACT_APP_FIREBASE_AUTH_DOMAIN=your_auth_domain
+REACT_APP_FIREBASE_PROJECT_ID=your_project_id
+REACT_APP_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+REACT_APP_FIREBASE_APP_ID=your_app_id
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+5. Start the development server
+```bash
+npm start
+```
 
-## What technologies are used for this project?
+The app will be available at `http://localhost:3000`
 
-This project is built with:
+## Usage
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. **Start Typing**: Click on the text area and start typing the displayed text
+2. **Real-time Feedback**: See your WPM and accuracy update in real-time
+3. **Complete Test**: Finish typing to see detailed results
+4. **View Analytics**: Check your performance graphs and statistics
+5. **Customize Experience**: Switch between different themes
+6. **Track Progress**: Sign up to save your results and track improvement over time
 
-## How can I deploy this project?
+## Feature Details
 
-Simply open [Lovable](https://lovable.dev/projects/2f0d0e7b-846f-411e-b498-98012f3e74f5) and click on Share -> Publish.
+### Typing Engine
+- Accurate WPM calculation (Words Per Minute)
+- Real-time accuracy tracking
+- Error highlighting and correction
+- Multiple test lengths and difficulties
 
-## Can I connect a custom domain to my Lovable project?
+### Analytics Dashboard
+- Performance graphs showing WPM over time
+- Accuracy trends and improvements
+- Detailed session statistics
+- Historical data comparison
 
-Yes, you can!
+### User System
+- Secure authentication with Firebase Auth
+- Personal typing profiles
+- Cross-device data synchronization
+- Progress tracking and goal setting
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Theming System
+- Multiple pre-built themes
+- Dark and light mode options
+- Customizable color schemes
+- Smooth theme transitions
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Acknowledgments
+
+- Inspired by [MonkeyType](https://monkeytype.com)
+- Built with [React](https://reactjs.org/) and [TypeScript](https://www.typescriptlang.org/)
+- Powered by [Firebase](https://firebase.google.com/)
