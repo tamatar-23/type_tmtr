@@ -18,7 +18,7 @@ A modern, feature-rich typing game built with React and TypeScript, inspired by 
 - **Backend**: Firebase
 - **Database**: Firestore
 - **Authentication**: Firebase Auth
-- **Hosting**: Firebase Hosting
+- **Hosting**: Vercel
 - **Charts**: Chart.js / Recharts (for performance graphs)
 
 ## Getting Started
