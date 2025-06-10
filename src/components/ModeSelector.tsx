@@ -29,7 +29,7 @@ export function ModeSelector({ settings, onSettingsChange, disabled }: ModeSelec
           size="sm"
           onClick={() => onSettingsChange({ ...settings, mode: 'time', duration: 30 })}
           disabled={disabled}
-          className="px-4 h-8 hover:bg-transparent"
+          className="px-4 h-8 hover:bg-transparent font-semibold"
           style={{
             backgroundColor: settings.mode === 'time' ? 'var(--theme-key-pressed)' : 'transparent',
             color: settings.mode === 'time' ? 'var(--theme-title)' : 'var(--theme-typebox)',
@@ -43,7 +43,7 @@ export function ModeSelector({ settings, onSettingsChange, disabled }: ModeSelec
           size="sm"
           onClick={() => onSettingsChange({ ...settings, mode: 'words', duration: 50 })}
           disabled={disabled}
-          className="px-4 h-8 hover:bg-transparent"
+          className="px-4 h-8 hover:bg-transparent font-semibold"
           style={{
             backgroundColor: settings.mode === 'words' ? 'var(--theme-key-pressed)' : 'transparent',
             color: settings.mode === 'words' ? 'var(--theme-title)' : 'var(--theme-typebox)',

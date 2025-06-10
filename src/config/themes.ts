@@ -157,19 +157,6 @@ export const themes: Record<string, Theme> = {
     cursor: '#8B5CF6',
     isDark: true
   },
-  goldenHour: {
-    label: 'Golden',
-    background: '#FFFBEB',
-    title: '#D97706',
-    typeBoxText: '#F59E0B',
-    stats: '#D97706',
-    keyboardBackground: 'transparent',
-    keyBackground: '#FEF3C7',
-    keyText: '#D97706',
-    keyPressed: '#FDE68A',
-    cursor: '#D97706',
-    isDark: false
-  },
   midnightOcean: {
     label: 'Midnight',
     background: '#0F172A',

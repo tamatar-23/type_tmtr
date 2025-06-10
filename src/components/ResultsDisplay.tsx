@@ -38,7 +38,7 @@ export function ResultsDisplay({ result, onRestart }: ResultsDisplayProps) {
         <div className="flex flex-col justify-center h-full px-2">
           <div className="animate-scale-in" style={{ animationDelay: '0.1s' }}>
             <div className="text-left">
-              <div className="text-sm opacity-85 mb-2" style={{ color: 'var(--theme-stats)' }}>
+              <div className="text-m font-medium opacity-85 mb-2" style={{ color: 'var(--theme-stats)' }}>
                 wpm
               </div>
               <div className="text-7xl font-bold" style={{ color: 'var(--theme-stats)' }}>
@@ -49,7 +49,7 @@ export function ResultsDisplay({ result, onRestart }: ResultsDisplayProps) {
 
           <div className="animate-scale-in" style={{ animationDelay: '0.2s' }}>
             <div className="text-left">
-              <div className="text-sm opacity-85 mb-2" style={{ color: 'var(--theme-stats)' }}>
+              <div className="text-m font-medium opacity-85 mb-2" style={{ color: 'var(--theme-stats)' }}>
                 acc
               </div>
               <div className="text-7xl font-bold" style={{ color: 'var(--theme-stats)' }}>
