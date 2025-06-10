@@ -1,346 +1,320 @@
-import { Link } from 'react-router-dom';
-import { ArrowLeft, TrendingUp, Clock, Target, Keyboard } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
+
 import { useState, useEffect } from 'react';
-import {
-  collection,
-  query,
-  orderBy,
-  limit,
-  getDocs,
-  where,
-  Timestamp
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase'; // Adjust import path as needed
-
-interface TestResult {
-  id: string;
-  timestamp: Timestamp;
-  results: {
-    wpm: number;
-    accuracy: number;
-  };
-  settings: {
-    mode: string;
-    difficulty: string;
-  };
-  totalTime: number;
-}
-
-interface UserStats {
-  averageWPM: number;
-  averageAccuracy: number;
-  totalTime: number;
-  testCount: number;
-  bestWPM: number;
-}
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, LogOut, User as UserIcon, Trophy, Target, Clock, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/hooks/useAuth';
+import { firestoreService, UserStats, FirestoreTestResult } from '@/services/firestore';
 
 const User = () => {
-  const { user, loading, signInWithGoogle, signInWithGithub, signOut } = useAuth();
-  const [userStats, setUserStats] = useState<UserStats>({
-    averageWPM: 0,
-    averageAccuracy: 0,
-    totalTime: 0,
-    testCount: 0,
-    bestWPM: 0
-  });
-  const [recentTests, setRecentTests] = useState<TestResult[]>([]);
-  const [statsLoading, setStatsLoading] = useState(true);
+  const navigate = useNavigate();
+  const { user, loading: authLoading, signOut } = useAuth();
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [recentTests, setRecentTests] = useState<(FirestoreTestResult & { id: string })[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [detailedError, setDetailedError] = useState<any>(null);
 
   useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login');
+      return;
+    }
+
     if (user) {
-      fetchUserStats();
-      fetchRecentTests();
+      fetchUserData();
     }
-  }, [user]);
+  }, [user, authLoading, navigate]);
 
-  const fetchUserStats = async () => {
+  const fetchUserData = async () => {
     if (!user) return;
 
     try {
-      const testResultsRef = collection(db, `users/${user.uid}/testResults`);
+      console.log('=== Starting user data fetch ===');
+      console.log('User ID:', user.uid);
+      console.log('User email:', user.email);
 
-      // Get all test results to calculate stats
-      const allTestsQuery = query(testResultsRef, orderBy('timestamp', 'desc'));
-      const allTestsSnapshot = await getDocs(allTestsQuery);
+      setLoading(true);
+      setError(null);
+      setDetailedError(null);
 
-      if (allTestsSnapshot.empty) {
-        setStatsLoading(false);
-        return;
-      }
+      // Fetch user stats
+      console.log('Fetching user stats...');
+      const userStats = await firestoreService.getUserStats(user.uid);
+      console.log('User stats result:', userStats);
+      setStats(userStats);
 
-      const tests = allTestsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as TestResult[];
-
-      // Calculate stats
-      const totalWPM = tests.reduce((sum, test) => sum + test.results.wpm, 0);
-      const totalAccuracy = tests.reduce((sum, test) => sum + test.results.accuracy, 0);
-      const totalTime = tests.reduce((sum, test) => sum + test.totalTime, 0);
-      const bestWPM = Math.max(...tests.map(test => test.results.wpm));
-
-      setUserStats({
-        averageWPM: Math.round(totalWPM / tests.length),
-        averageAccuracy: Math.round(totalAccuracy / tests.length),
-        totalTime: Math.round(totalTime / 3600), // Convert to hours
-        testCount: tests.length,
-        bestWPM: bestWPM
-      });
-
-      setStatsLoading(false);
-    } catch (error) {
-      console.error('Error fetching user stats:', error);
-      setStatsLoading(false);
-    }
-  };
-
-  const fetchRecentTests = async () => {
-    if (!user) return;
-
-    try {
-      const testResultsRef = collection(db, `users/${user.uid}/testResults`);
-
-      // Get recent tests using the first composite index: timestamp (desc), results.wpm (desc)
-      const recentTestsQuery = query(
-          testResultsRef,
-          orderBy('timestamp', 'desc'),
-          orderBy('results.wpm', 'desc'),
-          limit(10)
-      );
-
-      const recentTestsSnapshot = await getDocs(recentTestsQuery);
-      const tests = recentTestsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as TestResult[];
-
+      // Fetch recent tests
+      console.log('Fetching recent tests...');
+      const tests = await firestoreService.getRecentTests(user.uid, 5);
+      console.log('Recent tests result:', tests);
       setRecentTests(tests);
-    } catch (error) {
-      console.error('Error fetching recent tests:', error);
+
+      console.log('=== User data fetch completed successfully ===');
+    } catch (error: any) {
+      console.error('=== Error fetching user data ===');
+      console.error('Error object:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      console.error('Full error:', JSON.stringify(error, null, 2));
+
+      setDetailedError(error);
+
+      // Provide user-friendly error messages
+      if (error.code === 'permission-denied') {
+        setError('Permission denied: Please check your authentication status and try again.');
+      } else if (error.code === 'failed-precondition' || error.message.includes('index')) {
+        setError('Database index missing: The required Firestore indexes are not set up. Please contact support.');
+      } else if (error.code === 'unavailable') {
+        setError('Database temporarily unavailable: Please try again in a few moments.');
+      } else {
+        setError(`Failed to load user data: ${error.message}`);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const formatDate = (timestamp: Timestamp) => {
-    return timestamp.toDate().toLocaleDateString();
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
-  const formatTime = (timestamp: Timestamp) => {
-    return timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
-  if (loading || statsLoading) {
+  if (authLoading) {
     return (
-        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--theme-background)' }}>
-          <div className="text-lg" style={{ color: 'var(--theme-stats)' }}>Loading...</div>
+        <div
+            className="min-h-screen flex items-center justify-center"
+            style={{ backgroundColor: 'var(--theme-background)' }}
+        >
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2" style={{ borderColor: 'var(--theme-title)' }}></div>
         </div>
     );
   }
 
   if (!user) {
-    return (
-        <div className="min-h-screen" style={{ backgroundColor: 'var(--theme-background)', color: 'var(--theme-typebox)' }}>
-          {/* Header */}
-          <header className="flex justify-between items-center p-6 border-b border-border">
-            <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" style={{ color: 'var(--theme-stats)' }}>
-              <ArrowLeft className="h-4 w-4" />
-              Back to Test
-            </Link>
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--theme-title)' }}>User Profile</h1>
-            <div></div>
-          </header>
-
-          {/* Guest Mode Message */}
-          <main className="container mx-auto px-6 py-12">
-            <div className="max-w-2xl mx-auto text-center space-y-6">
-              <div className="mx-auto w-24 h-24 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(180, 180, 180, 0.1)' }}>
-                <Keyboard className="h-12 w-12" style={{ color: 'var(--theme-stats)' }} />
-              </div>
-
-              <div className="space-y-4">
-                <h2 className="text-3xl font-bold" style={{ color: 'var(--theme-title)' }}>Guest Mode</h2>
-                <p className="text-lg" style={{ color: 'var(--theme-stats)' }}>
-                  You're currently using Type.TMTR as a guest. Your test results are not being saved.
-                </p>
-                <p style={{ color: 'var(--theme-stats)' }}>
-                  Create an account to track your progress, view detailed statistics, and see your improvement over time.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-                <Button size="lg" onClick={signInWithGoogle}>
-                  Sign Up with Google
-                </Button>
-                <Button variant="outline" size="lg" onClick={signInWithGithub}>
-                  Sign Up with GitHub
-                </Button>
-              </div>
-            </div>
-          </main>
-        </div>
-    );
+    return null;
   }
 
-  // This is shown for logged-in users
   return (
       <div className="min-h-screen" style={{ backgroundColor: 'var(--theme-background)', color: 'var(--theme-typebox)' }}>
         {/* Header */}
-        <header className="flex justify-between items-center p-6 border-b border-border">
-          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" style={{ color: 'var(--theme-stats)' }}>
+        <header className="flex justify-between items-center p-6">
+          <Button
+              variant="ghost"
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 hover:bg-white/10"
+              style={{ color: 'var(--theme-title)' }}
+          >
             <ArrowLeft className="h-4 w-4" />
-            Back to Test
-          </Link>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--theme-title)' }}>
-            Welcome, {user.displayName}
-          </h1>
-          <Button variant="outline" size="sm" onClick={signOut}>
+            Back to Type.TMTR
+          </Button>
+
+          <Button
+              variant="outline"
+              onClick={handleSignOut}
+              className="flex items-center gap-2"
+              style={{
+                borderColor: 'var(--theme-stats)',
+                color: 'var(--theme-typebox)',
+                backgroundColor: 'transparent'
+              }}
+          >
+            <LogOut className="h-4 w-4" />
             Sign Out
           </Button>
         </header>
 
-        {/* User Stats */}
-        <main className="container mx-auto px-6 py-12">
-          <div className="max-w-6xl mx-auto space-y-8">
+        {/* Main Content */}
+        <main className="container mx-auto px-6 py-8">
+          <div className="max-w-4xl mx-auto space-y-8">
             {/* User Info */}
-            <div className="flex items-center gap-4 mb-8">
-              {user.photoURL && (
+            <div className="flex items-center gap-4">
+              {user.photoURL ? (
                   <img
                       src={user.photoURL}
-                      alt={user.displayName || 'User'}
+                      alt="Profile"
                       className="w-16 h-16 rounded-full"
                   />
+              ) : (
+                  <div
+                      className="w-16 h-16 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: 'var(--theme-key-bg)' }}
+                  >
+                    <UserIcon className="h-8 w-8" style={{ color: 'var(--theme-key-text)' }} />
+                  </div>
               )}
               <div>
-                <h2 className="text-2xl font-bold" style={{ color: 'var(--theme-title)' }}>
-                  {user.displayName}
-                </h2>
-                <p style={{ color: 'var(--theme-stats)' }}>{user.email}</p>
+                <h1 className="text-3xl font-bold" style={{ color: 'var(--theme-title)' }}>
+                  {user.displayName || 'Anonymous User'}
+                </h1>
+                <p style={{ color: 'var(--theme-stats)' }}>
+                  {user.email}
+                </p>
               </div>
             </div>
 
-            {/* Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--theme-stats)' }}>
-                    <TrendingUp className="h-4 w-4" />
-                    Average WPM
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold" style={{ color: 'var(--theme-title)' }}>
-                    {userStats.averageWPM}
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--theme-stats)' }}>
-                    {userStats.testCount > 0 ? `From ${userStats.testCount} tests` : 'No tests yet'}
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Error Display */}
+            {error && (
+                <Card style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+                  <CardContent className="p-4">
+                    <p style={{ color: 'var(--theme-title)' }} className="font-semibold">{error}</p>
 
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--theme-stats)' }}>
-                    <Target className="h-4 w-4" />
-                    Average Accuracy
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold" style={{ color: 'var(--theme-title)' }}>
-                    {userStats.averageAccuracy}%
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--theme-stats)' }}>
-                    {userStats.testCount > 0 ? `From ${userStats.testCount} tests` : 'No tests yet'}
-                  </div>
-                </CardContent>
-              </Card>
+                    {/* Detailed error for debugging */}
+                    {detailedError && (
+                        <details className="mt-4">
+                          <summary className="cursor-pointer text-sm" style={{ color: 'var(--theme-stats)' }}>
+                            Technical Details (for debugging)
+                          </summary>
+                          <pre className="mt-2 text-xs p-2 bg-black/20 rounded overflow-auto" style={{ color: 'var(--theme-stats)' }}>
+                      {JSON.stringify(detailedError, null, 2)}
+                    </pre>
+                        </details>
+                    )}
 
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--theme-stats)' }}>
-                    <Clock className="h-4 w-4" />
-                    Total Time
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold" style={{ color: 'var(--theme-title)' }}>
-                    {userStats.totalTime}h
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--theme-stats)' }}>
-                    {userStats.testCount} tests completed
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                          onClick={fetchUserData}
+                          variant="outline"
+                          style={{
+                            borderColor: 'var(--theme-stats)',
+                            color: 'var(--theme-typebox)',
+                            backgroundColor: 'transparent'
+                          }}
+                      >
+                        Try Again
+                      </Button>
 
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--theme-stats)' }}>
-                    <Keyboard className="h-4 w-4" />
-                    Best WPM
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold" style={{ color: 'var(--theme-title)' }}>
-                    {userStats.bestWPM}
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--theme-stats)' }}>
-                    {userStats.testCount > 0 ? 'Personal best' : 'No tests yet'}
-                  </div>
-                </CardContent>
-              </Card>
+                      <Button
+                          onClick={() => console.log('Current user:', user)}
+                          variant="outline"
+                          style={{
+                            borderColor: 'var(--theme-stats)',
+                            color: 'var(--theme-typebox)',
+                            backgroundColor: 'transparent'
+                          }}
+                      >
+                        Log Debug Info
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+            )}
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {loading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                      <Card key={i} style={{ backgroundColor: 'var(--theme-key-bg)', borderColor: 'var(--theme-stats)' }}>
+                        <CardContent className="p-6">
+                          <Skeleton className="h-8 w-8 mb-2" />
+                          <Skeleton className="h-4 w-20 mb-1" />
+                          <Skeleton className="h-6 w-16" />
+                        </CardContent>
+                      </Card>
+                  ))
+              ) : (
+                  <>
+                    <Card style={{ backgroundColor: 'var(--theme-key-bg)', borderColor: 'var(--theme-stats)' }}>
+                      <CardContent className="p-6">
+                        <Trophy className="h-8 w-8 mb-2" style={{ color: 'var(--theme-title)' }} />
+                        <p className="text-sm" style={{ color: 'var(--theme-stats)' }}>Best WPM</p>
+                        <p className="text-2xl font-bold" style={{ color: 'var(--theme-title)' }}>
+                          {stats?.bestWPM || 0}
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card style={{ backgroundColor: 'var(--theme-key-bg)', borderColor: 'var(--theme-stats)' }}>
+                      <CardContent className="p-6">
+                        <TrendingUp className="h-8 w-8 mb-2" style={{ color: 'var(--theme-title)' }} />
+                        <p className="text-sm" style={{ color: 'var(--theme-stats)' }}>Average WPM</p>
+                        <p className="text-2xl font-bold" style={{ color: 'var(--theme-title)' }}>
+                          {stats?.averageWPM || 0}
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card style={{ backgroundColor: 'var(--theme-key-bg)', borderColor: 'var(--theme-stats)' }}>
+                      <CardContent className="p-6">
+                        <Target className="h-8 w-8 mb-2" style={{ color: 'var(--theme-title)' }} />
+                        <p className="text-sm" style={{ color: 'var(--theme-stats)' }}>Average Accuracy</p>
+                        <p className="text-2xl font-bold" style={{ color: 'var(--theme-title)' }}>
+                          {stats?.averageAccuracy || 0}%
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card style={{ backgroundColor: 'var(--theme-key-bg)', borderColor: 'var(--theme-stats)' }}>
+                      <CardContent className="p-6">
+                        <Clock className="h-8 w-8 mb-2" style={{ color: 'var(--theme-title)' }} />
+                        <p className="text-sm" style={{ color: 'var(--theme-stats)' }}>Tests Completed</p>
+                        <p className="text-2xl font-bold" style={{ color: 'var(--theme-title)' }}>
+                          {stats?.totalTests || 0}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </>
+              )}
             </div>
 
-            {/* Recent Tests Table */}
-            <Card>
+            {/* Recent Tests */}
+            <Card style={{ backgroundColor: 'var(--theme-key-bg)', borderColor: 'var(--theme-stats)' }}>
               <CardHeader>
                 <CardTitle style={{ color: 'var(--theme-title)' }}>Recent Tests</CardTitle>
               </CardHeader>
               <CardContent>
-                {recentTests.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-4" style={{ color: 'var(--theme-stats)' }}>Date</th>
-                          <th className="text-left py-2 px-4" style={{ color: 'var(--theme-stats)' }}>Time</th>
-                          <th className="text-left py-2 px-4" style={{ color: 'var(--theme-stats)' }}>WPM</th>
-                          <th className="text-left py-2 px-4" style={{ color: 'var(--theme-stats)' }}>Accuracy</th>
-                          <th className="text-left py-2 px-4" style={{ color: 'var(--theme-stats)' }}>Mode</th>
-                          <th className="text-left py-2 px-4" style={{ color: 'var(--theme-stats)' }}>Duration</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {recentTests.map((test) => (
-                            <tr key={test.id} className="border-b border-opacity-20">
-                              <td className="py-2 px-4" style={{ color: 'var(--theme-title)' }}>
-                                {formatDate(test.timestamp)}
-                              </td>
-                              <td className="py-2 px-4" style={{ color: 'var(--theme-title)' }}>
-                                {formatTime(test.timestamp)}
-                              </td>
-                              <td className="py-2 px-4 font-bold" style={{ color: 'var(--theme-title)' }}>
-                                {test.results.wpm}
-                              </td>
-                              <td className="py-2 px-4" style={{ color: 'var(--theme-title)' }}>
-                                {test.results.accuracy}%
-                              </td>
-                              <td className="py-2 px-4" style={{ color: 'var(--theme-title)' }}>
-                                {test.settings.mode}
-                              </td>
-                              <td className="py-2 px-4" style={{ color: 'var(--theme-title)' }}>
-                                {test.totalTime}s
-                              </td>
-                            </tr>
-                        ))}
-                        </tbody>
-                      </table>
+                {loading ? (
+                    <div className="space-y-4">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="flex justify-between items-center p-4 rounded border" style={{ borderColor: 'var(--theme-stats)' }}>
+                            <div className="flex gap-4">
+                              <Skeleton className="h-4 w-16" />
+                              <Skeleton className="h-4 w-20" />
+                              <Skeleton className="h-4 w-24" />
+                            </div>
+                            <Skeleton className="h-4 w-20" />
+                          </div>
+                      ))}
+                    </div>
+                ) : recentTests.length > 0 ? (
+                    <div className="space-y-4">
+                      {recentTests.map((test) => (
+                          <div
+                              key={test.id}
+                              className="flex justify-between items-center p-4 rounded border"
+                              style={{ borderColor: 'var(--theme-stats)' }}
+                          >
+                            <div className="flex gap-6">
+                              <div>
+                                <span className="text-sm" style={{ color: 'var(--theme-stats)' }}>WPM: </span>
+                                <span className="font-semibold" style={{ color: 'var(--theme-title)' }}>{test.wpm}</span>
+                              </div>
+                              <div>
+                                <span className="text-sm" style={{ color: 'var(--theme-stats)' }}>Accuracy: </span>
+                                <span className="font-semibold" style={{ color: 'var(--theme-title)' }}>{test.accuracy}%</span>
+                              </div>
+                              <div>
+                                <span className="text-sm" style={{ color: 'var(--theme-stats)' }}>Mode: </span>
+                                <span className="font-semibold" style={{ color: 'var(--theme-title)' }}>
+                            {test.settings.mode} - {test.settings.duration}{test.settings.mode === 'time' ? 's' : ' words'}
+                          </span>
+                              </div>
+                            </div>
+                            <div className="text-sm" style={{ color: 'var(--theme-stats)' }}>
+                              {test.createdAt ? new Date(test.createdAt.toDate()).toLocaleDateString() : 'Unknown date'}
+                            </div>
+                          </div>
+                      ))}
                     </div>
                 ) : (
-                    <div className="text-center py-8" style={{ color: 'var(--theme-stats)' }}>
-                      <Keyboard className="mx-auto h-12 w-12 mb-4" />
-                      <p>Your test history will appear here once you complete some tests</p>
-                    </div>
+                    <p style={{ color: 'var(--theme-stats)' }}>
+                      {stats?.totalTests === 0 ? 'No tests completed yet. Start typing to see your progress!' : 'No recent tests found.'}
+                    </p>
                 )}
               </CardContent>
             </Card>

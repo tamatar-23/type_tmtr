@@ -10,8 +10,8 @@ interface ModeSelectorProps {
 }
 
 export function ModeSelector({ settings, onSettingsChange, disabled }: ModeSelectorProps) {
-  const timeOptions = [15, 30, 60];
-  const wordOptions = [10, 50, 100];
+  const timeOptions = [15, 30, 60, 120];
+  const wordOptions = [10, 25, 50, 100];
 
   return (
     <div 
