@@ -144,7 +144,7 @@ const Index = () => {
               {isActive && !isFinished && (
                 <div className="flex justify-center">
                   <Button onClick={handleRestart} variant="outline" className="bg-transparent border-gray-600 text-gray-400 hover:text-white hover:border-white">
-                    Press Tab to Restart
+                    Restart (Tab)
                   </Button>
                 </div>
               )}
