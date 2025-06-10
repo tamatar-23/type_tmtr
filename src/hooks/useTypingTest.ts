@@ -1,6 +1,9 @@
+
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { TestSettings, TypingStats, Character, TestResult } from '@/types/typing';
 import { generateText } from '@/utils/words';
+import { firestoreService } from '@/services/firestore';
+import { useAuth } from '@/hooks/useAuth';
 
 // Get saved settings or default
 const getSavedSettings = (): TestSettings => {
@@ -20,6 +23,7 @@ const getSavedSettings = (): TestSettings => {
 };
 
 export function useTypingTest(settings: TestSettings) {
+  const { user } = useAuth();
   const [text, setText] = useState('');
   const [userInput, setUserInput] = useState('');
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -37,14 +41,16 @@ export function useTypingTest(settings: TestSettings) {
     charCount: 0
   });
   const [wpmHistory, setWpmHistory] = useState<{ time: number; wpm: number }[]>([]);
-  
+  const [isSaving, setIsSaving] = useState(false);
+
   const startTime = useRef<number>(0);
   const intervalRef = useRef<NodeJS.Timeout>();
   const wpmIntervalRef = useRef<NodeJS.Timeout>();
+  const hasSaved = useRef<boolean>(false);
 
   // Save settings whenever they change
   useEffect(() => {
-    localStorage.setItem('typeflow-settings', JSON.stringify(settings));
+    localStorage.setItem('type.tmtr-settings', JSON.stringify(settings));
   }, [settings]);
 
   const initializeTest = useCallback(() => {
@@ -67,6 +73,7 @@ export function useTypingTest(settings: TestSettings) {
       charCount: 0
     });
     setWpmHistory([]);
+    hasSaved.current = false;
   }, [settings]);
 
   const calculateStats = useCallback((input: string, chars: Character[], elapsedTime: number) => {
@@ -74,14 +81,14 @@ export function useTypingTest(settings: TestSettings) {
     const incorrect = chars.filter(c => c.status === 'incorrect').length;
     const missed = chars.filter(c => c.status === 'missed').length;
     const totalChars = correct + incorrect + missed;
-    
+
     const accuracy = totalChars > 0 ? (correct / totalChars) * 100 : 0;
     const minutes = elapsedTime / 60;
-    
+
     // Improved WPM calculation
     // Raw WPM = all typed characters / 5 / minutes
     const rawWpm = minutes > 0 ? Math.round((totalChars / 5) / minutes) : 0;
-    
+
     // If accuracy is 100%, WPM should equal raw speed
     if (accuracy === 100) {
       return {
@@ -94,11 +101,11 @@ export function useTypingTest(settings: TestSettings) {
         charCount: totalChars
       };
     }
-    
+
     // Net WPM = (correct characters - incorrect characters) / 5 / minutes
     const netWpm = minutes > 0 ? Math.round(((correct - incorrect) / 5) / minutes) : 0;
     const finalWpm = Math.max(0, netWpm);
-    
+
     return {
       wpm: finalWpm,
       accuracy: Math.round(accuracy),
@@ -110,19 +117,94 @@ export function useTypingTest(settings: TestSettings) {
     };
   }, []);
 
-  const finishTest = useCallback(() => {
-    console.log('Finishing test...');
+  const saveTestResult = useCallback(async (finalStats: TypingStats, finalWpmHistory: { time: number; wpm: number }[]) => {
+    if (!user || hasSaved.current) {
+      console.log('Not saving - user not authenticated or already saved');
+      return;
+    }
+
+    setIsSaving(true);
+    hasSaved.current = true;
+
+    try {
+      console.log('=== SAVING TEST RESULT ===');
+      console.log('User ID:', user.uid);
+      console.log('Final stats:', finalStats);
+      console.log('Settings:', settings);
+      console.log('WPM History:', finalWpmHistory);
+
+      const result: TestResult = {
+        id: Date.now().toString(),
+        timestamp: new Date(),
+        settings: { ...settings },
+        wpmHistory: [...finalWpmHistory],
+        ...finalStats
+      };
+
+      console.log('Complete result object:', result);
+
+      const savedId = await firestoreService.saveTestResult(user.uid, result);
+      console.log('Test result saved successfully with ID:', savedId);
+
+      // Store in sessionStorage for immediate access on Results page
+      sessionStorage.setItem('lastResult', JSON.stringify(result));
+    } catch (error: any) {
+      console.error('=== ERROR SAVING TEST RESULT ===');
+      console.error('Error object:', error);
+      console.error('Error code:', error?.code);
+      console.error('Error message:', error?.message);
+
+      // Reset hasSaved so user can try again
+      hasSaved.current = false;
+
+      throw error;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [user, settings]);
+
+  const finishTest = useCallback(async () => {
+    console.log('=== FINISHING TEST ===');
+    console.log('Current stats:', stats);
+    console.log('Current WPM history:', wpmHistory);
+
     setIsFinished(true);
     setIsActive(false);
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (wpmIntervalRef.current) clearInterval(wpmIntervalRef.current);
-  }, []);
+
+    // Calculate final stats with current state
+    const elapsed = startTime.current ? (Date.now() - startTime.current) / 1000 : 0;
+    const finalStats = calculateStats(userInput, characters, elapsed);
+
+    console.log('Final calculated stats:', finalStats);
+    console.log('Elapsed time:', elapsed);
+
+    // Update stats state
+    setStats(finalStats);
+
+    // Save to Firestore immediately after finishing
+    if (user && !hasSaved.current) {
+      try {
+        console.log('=== ATTEMPTING TO SAVE TEST RESULT ===');
+        await saveTestResult(finalStats, wpmHistory);
+        console.log('=== TEST RESULT SAVED SUCCESSFULLY ===');
+      } catch (error) {
+        console.error('Failed to save test result:', error);
+        // Don't block the user experience, but log the error
+      }
+    } else {
+      console.log('Not saving - user not authenticated or already saved');
+    }
+  }, [user, stats, wpmHistory, userInput, characters, calculateStats, saveTestResult]);
 
   const startTest = useCallback(() => {
     if (!isActive) {
+      console.log('=== STARTING TEST ===');
       setIsActive(true);
       startTime.current = Date.now();
-      
+      hasSaved.current = false;
+
       if (settings.mode === 'time') {
         intervalRef.current = setInterval(() => {
           setTimeLeft(prev => {
@@ -145,16 +227,16 @@ export function useTypingTest(settings: TestSettings) {
 
   const handleInput = useCallback((input: string) => {
     if (isFinished) return;
-    
+
     if (!isActive && input.length > 0) {
       startTest();
     }
 
     setUserInput(input);
-    
+
     const newCharacters = [...characters];
     const inputLength = input.length;
-    
+
     // Update character statuses
     for (let i = 0; i < newCharacters.length; i++) {
       if (i < inputLength) {
@@ -163,15 +245,15 @@ export function useTypingTest(settings: TestSettings) {
         newCharacters[i].status = 'pending';
       }
     }
-    
+
     setCharacters(newCharacters);
     setCurrentIndex(inputLength);
-    
+
     // Calculate current stats
     const elapsed = isActive ? (Date.now() - startTime.current) / 1000 : 0;
     const currentStats = calculateStats(input, newCharacters, elapsed);
     setStats(currentStats);
-    
+
     // Check if test is complete
     if (settings.mode === 'words' && inputLength >= text.length) {
       finishTest();
@@ -182,17 +264,17 @@ export function useTypingTest(settings: TestSettings) {
     // Find the current word boundaries
     const textBeforeCursor = text.slice(0, currentPos);
     const textFromCursor = text.slice(currentPos);
-    
+
     // Find the end of current word (next space or end of text)
     const nextSpaceIndex = textFromCursor.indexOf(' ');
     const endOfWord = nextSpaceIndex === -1 ? text.length : currentPos + nextSpaceIndex;
-    
+
     // Mark skipped characters as incorrect
     const newCharacters = [...characters];
     for (let i = currentPos; i < endOfWord; i++) {
       newCharacters[i].status = 'incorrect';
     }
-    
+
     // Add the space if we're not at the end
     if (endOfWord < text.length) {
       newCharacters[endOfWord].status = 'correct'; // Mark the space as correct
@@ -200,13 +282,14 @@ export function useTypingTest(settings: TestSettings) {
       setUserInput(newInput);
       setCurrentIndex(endOfWord + 1);
     }
-    
+
     setCharacters(newCharacters);
   }, [text, characters, userInput]);
 
   const resetTest = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (wpmIntervalRef.current) clearInterval(wpmIntervalRef.current);
+    hasSaved.current = false;
     initializeTest();
   }, [initializeTest]);
 
@@ -219,6 +302,10 @@ export function useTypingTest(settings: TestSettings) {
       ...stats
     };
     console.log('Generated result:', result);
+
+    // Also store in sessionStorage for immediate access on Results page
+    sessionStorage.setItem('lastResult', JSON.stringify(result));
+
     return result;
   }, [settings, stats, wpmHistory]);
 
@@ -243,6 +330,7 @@ export function useTypingTest(settings: TestSettings) {
     timeLeft,
     stats,
     wpmHistory,
+    isSaving,
     handleInput,
     handleSpaceSkip,
     resetTest,

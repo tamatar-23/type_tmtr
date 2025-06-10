@@ -144,7 +144,7 @@ const Index = () => {
               {isActive && !isFinished && (
                 <div className="flex justify-center">
                   <Button onClick={handleRestart} variant="outline" className="bg-transparent border-gray-600 text-gray-400 hover:text-white hover:border-white">
-                    Restart (Tab)
+                    Press Tab to Restart
                   </Button>
                 </div>
               )}
@@ -156,7 +156,7 @@ const Index = () => {
       {/* Footer with improved visibility */}
       <footer className="fixed bottom-0 left-0 right-0 flex justify-between items-center p-6">
         <a
-          href="https://github.com"
+          href="https://github.com/tamatar-23/type_tmtr"
           target="_blank"
           rel="noopener noreferrer"
           className="transition-colors hover:opacity-80"
