@@ -4,6 +4,7 @@ export type TestMode = 'time' | 'words';
 export interface TestSettings {
   mode: TestMode;
   duration: number; // seconds for time mode, word count for words mode
+  difficulty: 'easy' | 'hard';
 }
 
 export interface TypingStats {

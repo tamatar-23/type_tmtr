@@ -50,7 +50,7 @@ export function useTypingTest(settings: TestSettings) {
 
   // Save settings whenever they change
   useEffect(() => {
-    localStorage.setItem('type.tmtr-settings', JSON.stringify(settings));
+    localStorage.setItem('typeflow-settings', JSON.stringify(settings));
   }, [settings]);
 
   const initializeTest = useCallback(() => {

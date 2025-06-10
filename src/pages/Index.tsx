@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Github } from 'lucide-react';
@@ -13,12 +12,19 @@ import { useAuth } from '@/hooks/useAuth';
 import { TestSettings } from '@/types/typing';
 import { ThemeSelector } from '@/components/ThemeSelector';
 
+// CONSISTENT localStorage key - same as in useTypingTest
+const SETTINGS_STORAGE_KEY = 'typeflow-settings';
+
 // Get saved settings or default
 const getSavedSettings = (): TestSettings => {
-  const saved = localStorage.getItem('typeflow-settings');
+  const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
   if (saved) {
     try {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      // Validate the parsed settings to ensure they have the correct structure
+      if (parsed && typeof parsed.mode === 'string' && typeof parsed.duration === 'number') {
+        return parsed;
+      }
     } catch {
       // Fall back to default if parsing fails
     }
@@ -51,6 +57,11 @@ const Index = () => {
     getResult
   } = useTypingTest(settings);
 
+  // Save settings whenever they change
+  useEffect(() => {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  }, [settings]);
+
   // Handle test completion
   useEffect(() => {
     if (isFinished) {
@@ -66,7 +77,7 @@ const Index = () => {
 
   const handleUserIconClick = () => {
     if (loading) return;
-    
+
     if (user) {
       navigate('/user');
     } else {
@@ -75,100 +86,100 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen text-foreground" style={{ backgroundColor: 'var(--theme-background)' }}>
-      {/* Header with improved visibility */}
-      <header className="flex justify-between items-center p-6">
-        <Link to="/" className="text-2xl font-bold" style={{ color: 'var(--theme-title)' }}>
-          Type.TMTR
-        </Link>
-        <Button 
-          variant="ghost" 
-          size="icon"
-          className="hover:bg-white/10"
-          style={{ color: 'var(--theme-title)' }}
-          onClick={handleUserIconClick}
-        >
-          <User className="h-5 w-5" />
-        </Button>
-      </header>
+      <div className="min-h-screen text-foreground" style={{ backgroundColor: 'var(--theme-background)' }}>
+        {/* Header with improved visibility */}
+        <header className="flex justify-between items-center p-6">
+          <Link to="/" className="text-2xl font-bold" style={{ color: 'var(--theme-title)' }}>
+            Type.TMTR
+          </Link>
+          <Button
+              variant="ghost"
+              size="icon"
+              className="hover:bg-white/10"
+              style={{ color: 'var(--theme-title)' }}
+              onClick={handleUserIconClick}
+          >
+            <User className="h-5 w-5" />
+          </Button>
+        </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-8 py-8">
-        <div className="max-w-5xl mx-auto space-y-8">
-          {showResults ? (
-            <ResultsDisplay result={getResult()} onRestart={handleRestart} />
-          ) : (
-            <>
-              {/* Top Stats and Controls */}
-              <div className="flex justify-center items-center gap-8">
-                {/* Mode Selector - only show when not active and not finished */}
-                {!isActive && !isFinished && (
-                  <ModeSelector
-                    settings={settings}
-                    onSettingsChange={setSettings}
-                    disabled={isActive}
-                  />
-                )}
+        {/* Main Content */}
+        <main className="container mx-auto px-8 py-8">
+          <div className="max-w-5xl mx-auto space-y-8">
+            {showResults ? (
+                <ResultsDisplay result={getResult()} onRestart={handleRestart} />
+            ) : (
+                <>
+                  {/* Top Stats and Controls */}
+                  <div className="flex justify-center items-center gap-8">
+                    {/* Mode Selector - only show when not active and not finished */}
+                    {!isActive && !isFinished && (
+                        <ModeSelector
+                            settings={settings}
+                            onSettingsChange={setSettings}
+                            disabled={isActive}
+                        />
+                    )}
 
-                {/* Stats Display - show when active or finished */}
-                {(isActive || isFinished) && (
-                  <StatsDisplay
-                    stats={stats}
-                    timeLeft={timeLeft}
-                    mode={settings.mode}
-                  />
-                )}
-              </div>
+                    {/* Stats Display - show when active or finished */}
+                    {(isActive || isFinished) && (
+                        <StatsDisplay
+                            stats={stats}
+                            timeLeft={timeLeft}
+                            mode={settings.mode}
+                        />
+                    )}
+                  </div>
 
-              {/* Typing Area - better centered with more padding */}
-              <div className="flex justify-center px-6">
-                <div className="w-full max-w-4xl">
-                  <TypingArea
-                    text={text}
-                    characters={characters}
-                    currentIndex={currentIndex}
-                    userInput={userInput}
-                    onInput={handleInput}
-                    onSpaceSkip={handleSpaceSkip}
-                    isFinished={isFinished}
-                  />
-                </div>
-              </div>
+                  {/* Typing Area - better centered with more padding */}
+                  <div className="flex justify-center px-6">
+                    <div className="w-full max-w-4xl">
+                      <TypingArea
+                          text={text}
+                          characters={characters}
+                          currentIndex={currentIndex}
+                          userInput={userInput}
+                          onInput={handleInput}
+                          onSpaceSkip={handleSpaceSkip}
+                          isFinished={isFinished}
+                      />
+                    </div>
+                  </div>
 
-              {/* Keyboard */}
-              <div className="flex justify-center px-6">
-                <Keyboard />
-              </div>
+                  {/* Keyboard */}
+                  <div className="flex justify-center px-6">
+                    <Keyboard />
+                  </div>
 
-              {/* Action Buttons - only show restart during active typing */}
-              {isActive && !isFinished && (
-                <div className="flex justify-center">
-                  <Button onClick={handleRestart} variant="outline" className="bg-transparent border-gray-600 text-gray-400 hover:text-white hover:border-white">
-                    Restart (Tab)
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </main>
+                  {/* Action Buttons - only show restart during active typing */}
+                  {isActive && !isFinished && (
+                      <div className="flex justify-center">
+                        <Button onClick={handleRestart} variant="outline" className="bg-transparent border-gray-600 text-gray-400 hover:text-white hover:border-white">
+                          Restart (Tab)
+                        </Button>
+                      </div>
+                  )}
+                </>
+            )}
+          </div>
+        </main>
 
-      {/* Footer with improved visibility */}
-      <footer className="fixed bottom-0 left-0 right-0 flex justify-between items-center p-6">
-        <a
-          href="https://github.com/tamatar-23/type_tmtr"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="transition-colors hover:opacity-80"
-          style={{ color: 'var(--theme-stats)' }}
-        >
-          <Github className="h-5 w-5" />
-        </a>
-        <div className="flex items-center gap-4">
-          <ThemeSelector />
-        </div>
-      </footer>
-    </div>
+        {/* Footer with improved visibility */}
+        <footer className="fixed bottom-0 left-0 right-0 flex justify-between items-center p-6">
+          <a
+              href="https://github.com/tamatar-23/type_tmtr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:opacity-80"
+              style={{ color: 'var(--theme-stats)' }}
+          >
+            <Github className="h-5 w-5" />
+          </a>
+          <div className="flex items-center gap-4">
+            <ThemeSelector />
+          </div>
+        </footer>
+      </div>
   );
 };
 
