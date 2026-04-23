@@ -35,7 +35,7 @@ export function SettingsModal({ isOpen, onClose, settings, onSettingsChange }: S
               <Sun className="h-4 w-4" /> Theme
             </label>
             <div className="flex flex-wrap gap-2">
-              {(['light', 'dark', 'system', 'catppuccin-latte', 'catppuccin-frappe', 'catppuccin-macchiato', 'catppuccin-mocha'] as Theme[]).map((t) => (
+              {(['light', 'dark', 'system', 'catppuccin-latte', 'catppuccin-mocha', 'dracula', 'nord', 'gruvbox', 'matcha', 'peach'] as Theme[]).map((t) => (
                 <Button
                   key={t}
                   variant={theme === t ? 'primary' : 'secondary'}

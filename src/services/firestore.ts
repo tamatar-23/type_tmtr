@@ -1,7 +1,7 @@
 
-import { doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { TestResult } from '@/types/typing';
+import { TestResult, TestSettings } from '@/types/typing';
 
 export interface UserStats {
     totalTests: number;
@@ -14,7 +14,7 @@ export interface UserStats {
 
 export interface FirestoreTestResult extends Omit<TestResult, 'id' | 'timestamp'> {
     userId: string;
-    createdAt: any; // Firestore timestamp
+    createdAt: Timestamp; // Firestore timestamp
 }
 
 export const firestoreService = {
@@ -46,7 +46,8 @@ export const firestoreService = {
             } else {
                 console.log('User profile already exists');
             }
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as { code?: string, message?: string };
             console.error('Error creating user profile:', error);
             console.error('Error code:', error.code);
             console.error('Error message:', error.message);
@@ -67,6 +68,7 @@ export const firestoreService = {
                 accuracy: result.accuracy,
                 correct: result.correct,
                 incorrect: result.incorrect,
+                extra: result.extra || 0,
                 missed: result.missed,
                 totalTime: result.totalTime,
                 charCount: result.charCount,
@@ -84,7 +86,8 @@ export const firestoreService = {
             await this.updateUserStats(userId, result);
 
             return testRef.id;
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as { code?: string, message?: string };
             console.error('Error saving test result:', error);
             console.error('Error code:', error.code);
             console.error('Error message:', error.message);
@@ -133,7 +136,8 @@ export const firestoreService = {
                 console.error('User document does not exist when trying to update stats');
                 throw new Error('User document does not exist');
             }
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as { code?: string, message?: string };
             console.error('Error updating user stats:', error);
             console.error('Error code:', error.code);
             console.error('Error message:', error.message);
@@ -175,7 +179,8 @@ export const firestoreService = {
                     totalTime: 0
                 };
             }
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as { code?: string, message?: string };
             console.error('Error fetching user stats:', error);
             console.error('Error code:', error.code);
             console.error('Error message:', error.message);
@@ -223,13 +228,14 @@ export const firestoreService = {
                     accuracy: number;
                     correct: number;
                     incorrect: number;
+                    extra?: number;
                     missed: number;
                     totalTime: number;
                     charCount: number;
-                    settings: any;
-                    wpmHistory: any[];
-                    errorHistory?: any[];
-                    createdAt: any;
+                    settings: TestSettings;
+                    wpmHistory: TestResult['wpmHistory'];
+                    errorHistory?: TestResult['errorHistory'];
+                    createdAt: Timestamp;
                 };
 
                 console.log('Processing test document:', doc.id, data);
@@ -242,6 +248,7 @@ export const firestoreService = {
                     accuracy: data.accuracy,
                     correct: data.correct,
                     incorrect: data.incorrect,
+                    extra: data.extra || 0,
                     missed: data.missed,
                     totalTime: data.totalTime,
                     charCount: data.charCount,
@@ -262,7 +269,8 @@ export const firestoreService = {
 
             console.log('Final sorted tests:', sortedTests.length);
             return sortedTests;
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as { code?: string, message?: string };
             console.error('Error fetching recent tests:', error);
             console.error('Error code:', error.code);
             console.error('Error message:', error.message);
@@ -274,7 +282,7 @@ export const firestoreService = {
             }
 
             // If it's an index error, provide helpful message
-            if (error.code === 'failed-precondition' || error.message.includes('index')) {
+            if (error.code === 'failed-precondition' || (error.message && error.message.includes('index'))) {
                 console.error('Missing index - this query requires a composite index');
                 throw new Error('Missing Firestore index: This query requires a composite index. Check the console for the index creation link.');
             }

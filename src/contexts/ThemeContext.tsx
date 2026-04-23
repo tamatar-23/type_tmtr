@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-export type Theme = "light" | "dark" | "system" | "catppuccin-latte" | "catppuccin-frappe" | "catppuccin-macchiato" | "catppuccin-mocha";
+export type Theme = "light" | "dark" | "system" | "catppuccin-latte" | "catppuccin-mocha" | "dracula" | "nord" | "gruvbox" | "matcha" | "peach";
 export type FontSize = "small" | "medium" | "large" | "xlarge";
 
 interface ThemeContextType {
@@ -42,7 +42,7 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
     const root = document.documentElement;
 
     // Apply Theme
-    root.classList.remove('light', 'dark', 'catppuccin-latte', 'catppuccin-frappe', 'catppuccin-macchiato', 'catppuccin-mocha');
+    root.classList.remove('light', 'dark', 'catppuccin-latte', 'catppuccin-mocha', 'dracula', 'nord', 'gruvbox', 'matcha', 'peach');
     root.removeAttribute('data-theme');
     
     let activeTheme = theme;

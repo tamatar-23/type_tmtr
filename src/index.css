@@ -97,14 +97,14 @@
     --ring: 228 24% 72%;
   }
 
-  [data-theme='catppuccin-macchiato'] {
-    --background: 232 23% 18%;
-    --secondary-bg: 233 23% 15%;
-    --border: 236 23% 12%;
-    --text-primary: 227 70% 88%;
-    --text-secondary: 227 27% 72%;
-    --text-muted: 230 13% 49%;
-    --error: 351 74% 73%;
+  [data-theme='matcha'] {
+    --background: 100 20% 95%;
+    --secondary-bg: 95 25% 90%;
+    --border: 95 20% 83%;
+    --text-primary: 100 15% 25%;
+    --text-secondary: 100 16% 37%;
+    --text-muted: 100 17% 57%;
+    --error: 0 50% 53%;
     
     --foreground: var(--text-primary);
     --card: var(--secondary-bg);
@@ -115,23 +115,23 @@
     --primary-foreground: var(--background);
     --secondary: var(--secondary-bg);
     --secondary-foreground: var(--text-primary);
-    --muted: 236 23% 12%;
+    --muted: 95 20% 83%;
     --muted-foreground: var(--text-secondary);
     --accent: var(--secondary-bg);
     --accent-foreground: var(--text-primary);
     --destructive: var(--error);
     --destructive-foreground: var(--background);
-    --ring: 227 27% 72%;
+    --ring: 100 16% 37%;
   }
 
-  [data-theme='catppuccin-frappe'] {
-    --background: 229 19% 23%;
-    --secondary-bg: 231 19% 20%;
-    --border: 229 19% 17%;
-    --text-primary: 227 68% 87%;
-    --text-secondary: 228 29% 73%;
-    --text-muted: 229 13% 52%;
-    --error: 359 68% 71%;
+  [data-theme='peach'] {
+    --background: 15 100% 97%;
+    --secondary-bg: 15 100% 93%;
+    --border: 15 100% 88%;
+    --text-primary: 25 47% 24%;
+    --text-secondary: 15 62% 59%;
+    --text-muted: 15 57% 45%;
+    --error: 0 68% 50%;
     
     --foreground: var(--text-primary);
     --card: var(--secondary-bg);
@@ -142,13 +142,13 @@
     --primary-foreground: var(--background);
     --secondary: var(--secondary-bg);
     --secondary-foreground: var(--text-primary);
-    --muted: 229 19% 17%;
+    --muted: 15 100% 88%;
     --muted-foreground: var(--text-secondary);
     --accent: var(--secondary-bg);
     --accent-foreground: var(--text-primary);
     --destructive: var(--error);
     --destructive-foreground: var(--background);
-    --ring: 228 29% 73%;
+    --ring: 15 62% 59%;
   }
 
   [data-theme='catppuccin-latte'] {
@@ -176,6 +176,89 @@
     --destructive: var(--error);
     --destructive-foreground: var(--background);
     --ring: 233 10% 47%;
+  }
+
+  [data-theme='dracula'] {
+    --background: 231 15% 18%;
+    --secondary-bg: 231 14% 31%;
+    --border: 225 27% 51%;
+    --text-primary: 60 30% 96%;
+    --text-secondary: 326 100% 74%;
+    --text-muted: 231 14% 31%;
+    --error: 0 100% 67%;
+    
+    --foreground: var(--text-primary);
+    --card: var(--secondary-bg);
+    --card-foreground: var(--text-primary);
+    --popover: var(--background);
+    --popover-foreground: var(--text-primary);
+    --primary: var(--text-primary);
+    --primary-foreground: var(--background);
+    --secondary: var(--secondary-bg);
+    --secondary-foreground: var(--text-primary);
+    --muted: 231 14% 31%;
+    --muted-foreground: var(--text-secondary);
+    --accent: var(--secondary-bg);
+    --accent-foreground: var(--text-primary);
+    --destructive: var(--error);
+    --destructive-foreground: var(--background);
+    --ring: 326 100% 74%;
+  }
+
+
+
+  [data-theme='nord'] {
+    --background: 220 16% 22%;
+    --secondary-bg: 222 16% 28%;
+    --border: 220 17% 32%;
+    --text-primary: 218 27% 94%;
+    --text-secondary: 178 25% 65%;
+    --text-muted: 220 16% 36%;
+    --error: 354 42% 56%;
+    
+    --foreground: var(--text-primary);
+    --card: var(--secondary-bg);
+    --card-foreground: var(--text-primary);
+    --popover: var(--background);
+    --popover-foreground: var(--text-primary);
+    --primary: var(--text-primary);
+    --primary-foreground: var(--background);
+    --secondary: var(--secondary-bg);
+    --secondary-foreground: var(--text-primary);
+    --muted: 220 16% 36%;
+    --muted-foreground: var(--text-secondary);
+    --accent: var(--secondary-bg);
+    --accent-foreground: var(--text-primary);
+    --destructive: var(--error);
+    --destructive-foreground: var(--background);
+    --ring: 178 25% 65%;
+  }
+
+  [data-theme='gruvbox'] {
+    --background: 0 0% 16%;
+    --secondary-bg: 20 5% 22%;
+    --border: 22 7% 29%;
+    --text-primary: 44 47% 81%;
+    --text-secondary: 40 73% 49%;
+    --text-muted: 28 11% 44%;
+    --error: 1 75% 46%;
+    
+    --foreground: var(--text-primary);
+    --card: var(--secondary-bg);
+    --card-foreground: var(--text-primary);
+    --popover: var(--background);
+    --popover-foreground: var(--text-primary);
+    --primary: var(--text-primary);
+    --primary-foreground: var(--background);
+    --secondary: var(--secondary-bg);
+    --secondary-foreground: var(--text-primary);
+    --muted: 28 11% 44%;
+    --muted-foreground: var(--text-secondary);
+    --accent: var(--secondary-bg);
+    --accent-foreground: var(--text-primary);
+    --destructive: var(--error);
+    --destructive-foreground: var(--background);
+    --ring: 40 73% 49%;
   }
 }
 

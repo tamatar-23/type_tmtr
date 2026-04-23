@@ -20,7 +20,7 @@ A modern, professional typing platform built with React and TypeScript. Engineer
 - **Performance Visualization**: Interactive trend graphs utilizing Recharts to map typing velocity over the course of a test.
 - **Persistent Profiles**: Secure user authentication via Firebase to track lifetime statistics and history.
 - **Data Dashboard**: A professional data-table layout detailing historical performance, ultimate bests, and long-term WPM progression.
-- **Premium Theming**: Native integration of the Catppuccin color ecosystem, offering Light (Latte) and Dark (Frappe, Macchiato, Mocha) variants.
+- **Advanced Customization**: Support for a diverse range of professionally curated themes, including standard Light/Dark modes, Catppuccin (Latte, Mocha), Dracula, Nord, Gruvbox, and specialized light modes like Matcha and Peach.
 
 ## Getting Started
 
