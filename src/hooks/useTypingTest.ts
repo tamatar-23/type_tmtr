@@ -1,46 +1,25 @@
-
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { TestSettings, TypingStats, Character, TestResult } from '@/types/typing';
+import { TestSettings, TypingStats, Word, TestResult } from '@/types/typing';
 import { generateText } from '@/utils/words';
 import { firestoreService } from '@/services/firestore';
 import { useAuth } from '@/hooks/useAuth';
 
-// Get saved settings or default
-const getSavedSettings = (): TestSettings => {
-  const saved = localStorage.getItem('typeflow-settings');
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch {
-      // Fall back to default if parsing fails
-    }
-  }
-  return {
-    mode: 'time',
-    duration: 30,
-    difficulty: 'easy'
-  };
-};
-
 export function useTypingTest(settings: TestSettings) {
   const { user } = useAuth();
-  const [text, setText] = useState('');
-  const [userInput, setUserInput] = useState('');
-  const [characters, setCharacters] = useState<Character[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [words, setWords] = useState<Word[]>([]);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [currentCharIndex, setCurrentCharIndex] = useState(0);
+  
   const [isActive, setIsActive] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [timeLeft, setTimeLeft] = useState(settings.mode === 'time' ? settings.duration : 0);
+  
   const [stats, setStats] = useState<TypingStats>({
-    wpm: 0,
-    accuracy: 0,
-    correct: 0,
-    incorrect: 0,
-    missed: 0,
-    totalTime: 0,
-    charCount: 0
+    wpm: 0, rawWpm: 0, accuracy: 0, correct: 0, incorrect: 0, missed: 0, extra: 0, totalTime: 0, charCount: 0
   });
-  const [wpmHistory, setWpmHistory] = useState<{ time: number; wpm: number }[]>([]);
+  
+  const [wpmHistory, setWpmHistory] = useState<{ time: number; wpm: number; rawWpm: number }[]>([]);
+  const [errorHistory, setErrorHistory] = useState<{ time: number; index: number }[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   const startTime = useRef<number>(0);
@@ -48,159 +27,102 @@ export function useTypingTest(settings: TestSettings) {
   const wpmIntervalRef = useRef<NodeJS.Timeout>();
   const hasSaved = useRef<boolean>(false);
 
-  // Save settings whenever they change
-  useEffect(() => {
-    localStorage.setItem('typeflow-settings', JSON.stringify(settings));
-  }, [settings]);
-
   const initializeTest = useCallback(() => {
-    const wordCount = settings.mode === 'words' ? settings.duration : 200;
-    const newText = generateText(wordCount, settings.difficulty);
-    setText(newText);
-    setCharacters(newText.split('').map(char => ({ char, status: 'pending' })));
-    setUserInput('');
-    setCurrentIndex(0);
+    const wordCount = settings.mode === 'words' ? settings.duration : 200; // Generate enough for time mode
+    const text = generateText(wordCount, settings.difficulty);
+    
+    const initialWords = text.split(' ').map(w => ({
+      text: w,
+      chars: w.split('').map(c => ({ value: c, status: 'pending' as const }))
+    }));
+    
+    setWords(initialWords);
+    setCurrentWordIndex(0);
+    setCurrentCharIndex(0);
     setIsActive(false);
     setIsFinished(false);
     setTimeLeft(settings.mode === 'time' ? settings.duration : 0);
     setStats({
-      wpm: 0,
-      accuracy: 0,
-      correct: 0,
-      incorrect: 0,
-      missed: 0,
-      totalTime: 0,
-      charCount: 0
+      wpm: 0, rawWpm: 0, accuracy: 0, correct: 0, incorrect: 0, missed: 0, extra: 0, totalTime: 0, charCount: 0
     });
     setWpmHistory([]);
+    setErrorHistory([]);
     hasSaved.current = false;
   }, [settings]);
 
-  const calculateStats = useCallback((input: string, chars: Character[], elapsedTime: number) => {
-    const correct = chars.filter(c => c.status === 'correct').length;
-    const incorrect = chars.filter(c => c.status === 'incorrect').length;
-    const missed = chars.filter(c => c.status === 'missed').length;
-    const totalChars = correct + incorrect + missed;
+  const calculateStats = useCallback((currentWords: Word[], elapsedTime: number) => {
+    let correct = 0;
+    let incorrect = 0;
+    let extra = 0;
+    
+    currentWords.forEach((word, wIdx) => {
+      word.chars.forEach(char => {
+        if (char.status === 'correct') correct++;
+        if (char.status === 'incorrect') incorrect++;
+        if (char.status === 'extra') extra++;
+      });
+      // implicitly typed spaces count as correct
+      if (wIdx < currentWordIndex) correct++;
+    });
 
-    const accuracy = totalChars > 0 ? (correct / totalChars) * 100 : 0;
+    const totalTyped = correct + incorrect + extra;
+    const accuracy = totalTyped > 0 ? (correct / totalTyped) * 100 : 0;
     const minutes = elapsedTime / 60;
-
-    // Improved WPM calculation
-    // Raw WPM = all typed characters / 5 / minutes
-    const rawWpm = minutes > 0 ? Math.round((totalChars / 5) / minutes) : 0;
-
-    // If accuracy is 100%, WPM should equal raw speed
-    if (accuracy === 100) {
-      return {
-        wpm: rawWpm,
-        accuracy: Math.round(accuracy),
-        correct,
-        incorrect,
-        missed,
-        totalTime: elapsedTime,
-        charCount: totalChars
-      };
-    }
-
-    // Net WPM = (correct characters - incorrect characters) / 5 / minutes
-    const netWpm = minutes > 0 ? Math.round(((correct - incorrect) / 5) / minutes) : 0;
-    const finalWpm = Math.max(0, netWpm);
-
-    return {
-      wpm: finalWpm,
-      accuracy: Math.round(accuracy),
-      correct,
-      incorrect,
-      missed,
-      totalTime: elapsedTime,
-      charCount: totalChars
+    
+    const rawWpm = minutes > 0 ? Math.round((totalTyped / 5) / minutes) : 0;
+    const netWpm = minutes > 0 ? Math.round(((correct - (incorrect + extra)) / 5) / minutes) : 0;
+    
+    return { 
+      wpm: accuracy === 100 ? rawWpm : Math.max(0, netWpm), 
+      rawWpm,
+      accuracy: Math.round(accuracy), 
+      correct, 
+      incorrect, 
+      missed: 0, 
+      extra, 
+      totalTime: elapsedTime, 
+      charCount: totalTyped 
     };
-  }, []);
+  }, [currentWordIndex]);
 
-  const saveTestResult = useCallback(async (finalStats: TypingStats, finalWpmHistory: { time: number; wpm: number }[]) => {
-    if (!user || hasSaved.current) {
-      console.log('Not saving - user not authenticated or already saved');
-      return;
-    }
-
+  const saveTestResult = useCallback(async (finalStats: TypingStats, finalWpmHistory: { time: number; wpm: number; rawWpm: number }[], finalErrorHistory: { time: number; index: number }[]) => {
+    if (!user || hasSaved.current) return;
     setIsSaving(true);
     hasSaved.current = true;
-
     try {
-      console.log('=== SAVING TEST RESULT ===');
-      console.log('User ID:', user.uid);
-      console.log('Final stats:', finalStats);
-      console.log('Settings:', settings);
-      console.log('WPM History:', finalWpmHistory);
-
       const result: TestResult = {
         id: Date.now().toString(),
         timestamp: new Date(),
         settings: { ...settings },
         wpmHistory: [...finalWpmHistory],
+        errorHistory: [...finalErrorHistory],
         ...finalStats
       };
-
-      console.log('Complete result object:', result);
-
-      const savedId = await firestoreService.saveTestResult(user.uid, result);
-      console.log('Test result saved successfully with ID:', savedId);
-
-      // Store in sessionStorage for immediate access on Results page
-      sessionStorage.setItem('lastResult', JSON.stringify(result));
-    } catch (error: any) {
-      console.error('=== ERROR SAVING TEST RESULT ===');
-      console.error('Error object:', error);
-      console.error('Error code:', error?.code);
-      console.error('Error message:', error?.message);
-
-      // Reset hasSaved so user can try again
+      await firestoreService.saveTestResult(user.uid, result);
+    } catch (error) {
+      console.error(error);
       hasSaved.current = false;
-
-      throw error;
     } finally {
       setIsSaving(false);
     }
   }, [user, settings]);
 
-  const finishTest = useCallback(async () => {
-    console.log('=== FINISHING TEST ===');
-    console.log('Current stats:', stats);
-    console.log('Current WPM history:', wpmHistory);
-
+  const finishTest = useCallback(() => {
+    if (isFinished) return;
     setIsFinished(true);
     setIsActive(false);
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (wpmIntervalRef.current) clearInterval(wpmIntervalRef.current);
 
-    // Calculate final stats with current state
-    const elapsed = startTime.current ? (Date.now() - startTime.current) / 1000 : 0;
-    const finalStats = calculateStats(userInput, characters, elapsed);
-
-    console.log('Final calculated stats:', finalStats);
-    console.log('Elapsed time:', elapsed);
-
-    // Update stats state
-    setStats(finalStats);
-
-    // Save to Firestore immediately after finishing
-    if (user && !hasSaved.current) {
-      try {
-        console.log('=== ATTEMPTING TO SAVE TEST RESULT ===');
-        await saveTestResult(finalStats, wpmHistory);
-        console.log('=== TEST RESULT SAVED SUCCESSFULLY ===');
-      } catch (error) {
-        console.error('Failed to save test result:', error);
-        // Don't block the user experience, but log the error
-      }
-    } else {
-      console.log('Not saving - user not authenticated or already saved');
-    }
-  }, [user, stats, wpmHistory, userInput, characters, calculateStats, saveTestResult]);
+    setStats(prev => {
+      // Calculate final
+      if (user && !hasSaved.current) saveTestResult(prev, wpmHistory, errorHistory);
+      return prev;
+    });
+  }, [isFinished, user, wpmHistory, errorHistory, saveTestResult]);
 
   const startTest = useCallback(() => {
     if (!isActive) {
-      console.log('=== STARTING TEST ===');
       setIsActive(true);
       startTime.current = Date.now();
       hasSaved.current = false;
@@ -218,121 +140,166 @@ export function useTypingTest(settings: TestSettings) {
       }
 
       wpmIntervalRef.current = setInterval(() => {
-        const elapsed = (Date.now() - startTime.current) / 1000;
-        const currentStats = calculateStats(userInput, characters, elapsed);
-        setWpmHistory(prev => [...prev, { time: elapsed, wpm: currentStats.wpm }]);
+        setWords(currentWords => {
+          const elapsed = (Date.now() - startTime.current) / 1000;
+          setStats(calculateStats(currentWords, elapsed));
+          setWpmHistory(prev => {
+            const s = calculateStats(currentWords, elapsed);
+            return [...prev, { time: elapsed, wpm: s.wpm, rawWpm: s.rawWpm }];
+          });
+          return currentWords;
+        });
       }, 1000);
     }
-  }, [isActive, settings.mode, userInput, characters, calculateStats, finishTest]);
+  }, [isActive, settings.mode, calculateStats, finishTest]);
 
-  const handleInput = useCallback((input: string) => {
+  const handleKeyDown = useCallback((key: string, ctrlKey: boolean) => {
     if (isFinished) return;
+    if (!isActive && key.length === 1) startTest();
 
-    if (!isActive && input.length > 0) {
-      startTest();
-    }
+    setWords(prevWords => {
+      const newWords = [...prevWords];
+      let wIdx = currentWordIndex;
+      let cIdx = currentCharIndex;
 
-    setUserInput(input);
+      const currentWord = newWords[wIdx];
+      const hasErrorInCurrentWord = currentWord.chars.some(c => c.status === 'incorrect' || c.status === 'extra') || currentWord.isError;
 
-    const newCharacters = [...characters];
-    const inputLength = input.length;
-
-    // Update character statuses
-    for (let i = 0; i < newCharacters.length; i++) {
-      if (i < inputLength) {
-        newCharacters[i].status = input[i] === text[i] ? 'correct' : 'incorrect';
-      } else {
-        newCharacters[i].status = 'pending';
+      if (settings.stopOnError && hasErrorInCurrentWord && key !== 'Backspace') {
+        return prevWords; // Block advancing
       }
-    }
 
-    setCharacters(newCharacters);
-    setCurrentIndex(inputLength);
+      if (key === 'Backspace') {
+        if (ctrlKey) {
+          const cw = { ...newWords[wIdx], chars: [...newWords[wIdx].chars] };
+          cw.chars.splice(cw.text.length); // remove extras
+          for (let i = 0; i < cw.chars.length; i++) {
+            cw.chars[i].status = 'pending';
+            cw.chars[i].actualValue = undefined;
+          }
+          cw.isError = false;
+          newWords[wIdx] = cw;
+          cIdx = 0;
+        } else {
+          if (cIdx > 0) {
+            const cw = { ...newWords[wIdx], chars: [...newWords[wIdx].chars] };
+            cIdx--;
+            if (cIdx >= cw.text.length) {
+              cw.chars.pop(); // remove extra
+            } else {
+              cw.chars[cIdx].status = 'pending';
+              cw.chars[cIdx].actualValue = undefined;
+            }
+            cw.isError = false; // re-evaluate
+            newWords[wIdx] = cw;
+          } else if (wIdx > 0) {
+            wIdx--;
+            const prevWord = newWords[wIdx];
+            cIdx = prevWord.chars.length;
+          }
+        }
+      } else if (key === ' ') {
+        if (wIdx < newWords.length - 1) {
+          const cw = { ...newWords[wIdx], chars: [...newWords[wIdx].chars] };
+          let hasErrors = false;
+          for (let i = cIdx; i < cw.text.length; i++) {
+            cw.chars[i].status = 'missed';
+            hasErrors = true;
+          }
+          if (cw.chars.some(c => c.status === 'incorrect' || c.status === 'extra' || c.status === 'missed')) {
+            hasErrors = true;
+          }
+          cw.isError = hasErrors;
+          newWords[wIdx] = cw;
 
-    // Calculate current stats
-    const elapsed = isActive ? (Date.now() - startTime.current) / 1000 : 0;
-    const currentStats = calculateStats(input, newCharacters, elapsed);
-    setStats(currentStats);
+          wIdx++;
+          cIdx = 0;
+        }
+      } else if (key.length === 1) {
+        const cw = { ...newWords[wIdx], chars: [...newWords[wIdx].chars] };
+        let isErrorNow = false;
 
-    // Check if test is complete
-    if (settings.mode === 'words' && inputLength >= text.length) {
-      finishTest();
-    }
-  }, [isFinished, isActive, characters, text, settings.mode, startTest, calculateStats, finishTest]);
+        if (cIdx >= cw.text.length) {
+          if (cIdx < cw.text.length + 10) {
+            cw.chars.push({ value: key, status: 'extra', actualValue: key });
+            cIdx++;
+            isErrorNow = true;
+          }
+        } else {
+          const expectedChar = cw.chars[cIdx].value;
+          if (key === expectedChar) {
+            cw.chars[cIdx].status = 'correct';
+            cw.chars[cIdx].actualValue = undefined;
+          } else {
+            cw.chars[cIdx].status = 'incorrect';
+            cw.chars[cIdx].actualValue = key;
+            isErrorNow = true;
+          }
+          cIdx++;
+        }
+        newWords[wIdx] = cw;
 
-  const handleSpaceSkip = useCallback((currentPos: number) => {
-    // Find the current word boundaries
-    const textBeforeCursor = text.slice(0, currentPos);
-    const textFromCursor = text.slice(currentPos);
+        if (isErrorNow) {
+          const elapsed = (Date.now() - startTime.current) / 1000;
+          let globalIndex = 0;
+          for (let i = 0; i < wIdx; i++) globalIndex += newWords[i].text.length + 1;
+          globalIndex += cIdx - 1;
+          setErrorHistory(prev => [...prev, { time: elapsed, index: globalIndex }]);
+        }
 
-    // Find the end of current word (next space or end of text)
-    const nextSpaceIndex = textFromCursor.indexOf(' ');
-    const endOfWord = nextSpaceIndex === -1 ? text.length : currentPos + nextSpaceIndex;
+        if (settings.mode === 'words' && wIdx === newWords.length - 1 && cIdx === cw.chars.length) {
+          setTimeout(finishTest, 0);
+        }
+      }
 
-    // Mark skipped characters as incorrect
-    const newCharacters = [...characters];
-    for (let i = currentPos; i < endOfWord; i++) {
-      newCharacters[i].status = 'incorrect';
-    }
+      setCurrentWordIndex(wIdx);
+      setCurrentCharIndex(cIdx);
+      
+      if (isActive) {
+        const elapsed = (Date.now() - startTime.current) / 1000;
+        setStats(calculateStats(newWords, elapsed));
+      }
 
-    // Add the space if we're not at the end
-    if (endOfWord < text.length) {
-      newCharacters[endOfWord].status = 'correct'; // Mark the space as correct
-      const newInput = userInput + text.slice(currentPos, endOfWord + 1);
-      setUserInput(newInput);
-      setCurrentIndex(endOfWord + 1);
-    }
-
-    setCharacters(newCharacters);
-  }, [text, characters, userInput]);
+      return newWords;
+    });
+  }, [isFinished, isActive, startTest, currentWordIndex, currentCharIndex, settings.mode, settings.stopOnError, finishTest, calculateStats]);
 
   const resetTest = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (wpmIntervalRef.current) clearInterval(wpmIntervalRef.current);
-    hasSaved.current = false;
     initializeTest();
   }, [initializeTest]);
 
   const getResult = useCallback((): TestResult => {
-    const result = {
+    return {
       id: Date.now().toString(),
       timestamp: new Date(),
       settings,
       wpmHistory,
+      errorHistory,
       ...stats
     };
-    console.log('Generated result:', result);
-
-    // Also store in sessionStorage for immediate access on Results page
-    sessionStorage.setItem('lastResult', JSON.stringify(result));
-
-    return result;
-  }, [settings, stats, wpmHistory]);
+  }, [settings, stats, wpmHistory, errorHistory]);
 
   useEffect(() => {
     initializeTest();
-  }, [initializeTest]);
-
-  useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (wpmIntervalRef.current) clearInterval(wpmIntervalRef.current);
     };
-  }, []);
+  }, [initializeTest]);
 
   return {
-    text,
-    userInput,
-    characters,
-    currentIndex,
+    words,
+    currentWordIndex,
+    currentCharIndex,
     isActive,
     isFinished,
     timeLeft,
     stats,
     wpmHistory,
     isSaving,
-    handleInput,
-    handleSpaceSkip,
+    handleKeyDown,
     resetTest,
     getResult
   };

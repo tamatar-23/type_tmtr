@@ -1,33 +1,34 @@
 # Type.TMTR
 
-A modern, feature-rich typing game built with React and TypeScript, inspired by MonkeyType. Test and improve your typing speed and accuracy with detailed analytics and beautiful themes.
-
-## Features
-
-- **MonkeyType-style Typing Game**: Clean, distraction-free typing interface
-- **Real-time Performance Tracking**: Live WPM and accuracy calculations
-- **Detailed Analytics**: Comprehensive graphs and statistics for your typing sessions
-- **Multiple Themes**: Customize your typing experience with various color schemes
-- **User Profiles**: Create an account to track your progress over time
-- **Cloud Data Storage**: All your typing data is securely stored and synced across devices
-- **Responsive Design**: Works seamlessly on desktop and mobile devices
+A modern, professional typing platform built with React and TypeScript. Engineered for performance and aesthetics, it provides comprehensive analytics, a distraction-free interface, and detailed historical tracking to help users improve their typing speed and accuracy.
 
 ## Tech Stack
 
-- **Frontend**: React with TypeScript
-- **Backend**: Firebase
-- **Database**: Firestore
-- **Authentication**: Firebase Auth
-- **Hosting**: Vercel
-- **Charts**: Chart.js / Recharts (for performance graphs)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
+
+## Core Features
+
+- **Minimalist Interface**: A distraction-free typing environment focused entirely on the content.
+- **Multiple Modes**: Support for both time-based (15s, 30s, 60s, 120s) and word-count-based (10, 25, 50, 100) tests.
+- **Real-time Engine**: Character-by-character tracking with immediate error validation and dynamic WPM calculation.
+- **Strict Mode**: Optional "Stop on Error" behavior to enforce absolute precision.
+- **Post-test Analytics**: Detailed breakdown of Net WPM, Raw WPM, Accuracy, Consistency, and keystroke distribution.
+- **Performance Visualization**: Interactive trend graphs utilizing Recharts to map typing velocity over the course of a test.
+- **Persistent Profiles**: Secure user authentication via Firebase to track lifetime statistics and history.
+- **Data Dashboard**: A professional data-table layout detailing historical performance, ultimate bests, and long-term WPM progression.
+- **Premium Theming**: Native integration of the Catppuccin color ecosystem, offering Light (Latte) and Dark (Frappe, Macchiato, Mocha) variants.
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
-- npm or yarn
-- Firebase account
+- Node.js (v18 or higher)
+- npm or bun
+- A Firebase project
 
 ### Installation
 
@@ -42,67 +43,30 @@ cd type_tmtr
 npm install
 ```
 
-3. Set up Firebase
-    - Create a new Firebase project at [Firebase Console](https://console.firebase.google.com)
-    - Enable Firestore Database
-    - Enable Authentication (Email/Password)
-    - Copy your Firebase config
-
-4. Create environment variables
-```bash
-# Create .env file in root directory
-REACT_APP_FIREBASE_API_KEY=your_api_key
-REACT_APP_FIREBASE_AUTH_DOMAIN=your_auth_domain
-REACT_APP_FIREBASE_PROJECT_ID=your_project_id
-REACT_APP_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-REACT_APP_FIREBASE_APP_ID=your_app_id
+3. Configure Environment Variables
+Create a `.env` file in the root directory and populate it with your Firebase configuration credentials:
+```env
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
 ```
 
-5. Start the development server
+4. Start the development server
 ```bash
-npm start
+npm run dev
 ```
 
-The app will be available at `http://localhost:3000`
+The application will be accessible at `http://localhost:5173`.
 
-## Usage
+## Architecture Details
 
-1. **Start Typing**: Click on the text area and start typing the displayed text
-2. **Real-time Feedback**: See your WPM and accuracy update in real-time
-3. **Complete Test**: Finish typing to see detailed results
-4. **View Analytics**: Check your performance graphs and statistics
-5. **Customize Experience**: Switch between different themes
-6. **Track Progress**: Sign up to save your results and track improvement over time
-
-## Feature Details
-
-### Typing Engine
-- Accurate WPM calculation (Words Per Minute)
-- Real-time accuracy tracking
-- Error highlighting and correction
-- Multiple test lengths and difficulties
-
-### Analytics Dashboard
-- Performance graphs showing WPM over time
-- Accuracy trends and improvements
-- Detailed session statistics
-- Historical data comparison
-
-### User System
-- Secure authentication with Firebase Auth
-- Personal typing profiles
-- Cross-device data synchronization
-- Progress tracking and goal setting
-
-### Theming System
-- Multiple pre-built themes
-- Dark and light mode options
-- Customizable color schemes
-- Smooth theme transitions
+- **Typing Engine**: The core typing state machine is handled via custom React hooks, ensuring high-performance re-renders isolated entirely to the typing layer.
+- **Data Persistence**: Firestore is utilized for storing user test results. Queries are structured sequentially, allowing for client-side aggregation of lifetime statistics without heavy backend computational loads.
+- **Styling**: Component-based styling is enforced via Tailwind CSS with a central `index.css` defining dynamic CSS variables, enabling instant, seamless theme transitions.
 
 ## Acknowledgments
 
-- Inspired by [MonkeyType](https://monkeytype.com)
-- Built with [React](https://reactjs.org/) and [TypeScript](https://www.typescriptlang.org/)
-- Powered by [Firebase](https://firebase.google.com/)
+Built utilizing React, TypeScript, and Tailwind CSS. Hosted database and authentication services provided by Google Firebase.

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 
 export function Keyboard() {
@@ -32,25 +31,23 @@ export function Keyboard() {
     ['z', 'x', 'c', 'v', 'b', 'n', 'm']
   ];
 
-  const getKeyStyle = (key: string) => {
+  const getKeyClass = (key: string) => {
     const isPressed = pressedKeys.has(key) || pressedKeys.has(key.toLowerCase()) || (key === '⌫' && pressedKeys.has('backspace'));
-    return {
-      backgroundColor: isPressed ? 'var(--theme-key-pressed)' : 'var(--theme-key-bg)',
-      color: 'var(--theme-key-text)',
-      transform: isPressed ? 'scale(0.95)' : 'scale(1)',
-      transition: 'all 0.1s ease'
-    };
+
+    return `flex items-center justify-center rounded text-sm font-medium transition-all duration-100 ${isPressed
+      ? 'bg-text-secondary text-background scale-95'
+      : 'bg-secondary-bg text-text-secondary border border-border scale-100'
+      }`;
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto mt-8">
+    <div className="w-full max-w-2xl mx-auto mt-8 opacity-30 select-none pointer-events-none transition-opacity hover:opacity-50">
       {/* First row with backspace after p */}
       <div className="flex gap-2 mb-2 justify-center">
         {keyRows[0].map((key) => (
           <div
             key={key}
-            className={`${key === '⌫' ? 'w-16' : 'w-10'} h-10 flex items-center justify-center rounded text-sm font-medium`}
-            style={getKeyStyle(key)}
+            className={`${key === '⌫' ? 'w-20' : 'w-10'} h-10 ${getKeyClass(key)}`}
           >
             {key}
           </div>
@@ -62,8 +59,7 @@ export function Keyboard() {
         {keyRows[1].map((key) => (
           <div
             key={key}
-            className="w-10 h-10 flex items-center justify-center rounded text-sm font-medium"
-            style={getKeyStyle(key)}
+            className={`w-10 h-10 ${getKeyClass(key)}`}
           >
             {key}
           </div>
@@ -75,8 +71,7 @@ export function Keyboard() {
         {keyRows[2].map((key) => (
           <div
             key={key}
-            className="w-10 h-10 flex items-center justify-center rounded text-sm font-medium"
-            style={getKeyStyle(key)}
+            className={`w-10 h-10 ${getKeyClass(key)}`}
           >
             {key}
           </div>
@@ -86,8 +81,7 @@ export function Keyboard() {
       {/* Space bar */}
       <div className="flex gap-2 justify-center items-center">
         <div
-          className="w-64 h-10 flex items-center justify-center rounded text-sm font-medium"
-          style={getKeyStyle(' ')}
+          className={`w-64 h-10 ${getKeyClass(' ')}`}
         >
         </div>
       </div>

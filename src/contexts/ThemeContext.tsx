@@ -1,55 +1,65 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
-import { themes, Theme } from '@/config/themes';
+
+export type Theme = "light" | "dark" | "system" | "catppuccin-latte" | "catppuccin-frappe" | "catppuccin-macchiato" | "catppuccin-mocha";
+export type FontSize = "small" | "medium" | "large" | "xlarge";
 
 interface ThemeContextType {
-  currentTheme: string;
-  themeConfig: Theme;
-  setTheme: (themeName: string) => void;
+  theme: Theme;
+  fontSize: FontSize;
+  setTheme: (theme: Theme) => void;
+  setFontSize: (size: FontSize) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+const FONT_SIZES: Record<FontSize, string> = {
+  small: '16px',
+  medium: '20px',
+  large: '24px',
+  xlarge: '28px',
+};
+
 export function ThemeContextProvider({ children }: { children: React.ReactNode }) {
-  const [currentTheme, setCurrentTheme] = useState(() => {
-    const saved = localStorage.getItem('typeflow-theme');
-    return saved && themes[saved] ? saved : 'vantaBlack';
+  const [theme, setThemeState] = useState<Theme>(() => {
+    return (localStorage.getItem('typeflow-theme') as Theme) || 'system';
   });
 
-  const themeConfig = themes[currentTheme] || themes.vantaBlack;
+  const [fontSize, setFontSizeState] = useState<FontSize>(() => {
+    return (localStorage.getItem('typeflow-font-size') as FontSize) || 'medium';
+  });
 
-  const setTheme = (themeName: string) => {
-    if (themes[themeName]) {
-      setCurrentTheme(themeName);
-      localStorage.setItem('typeflow-theme', themeName);
-    }
+  const setTheme = (newTheme: Theme) => {
+    setThemeState(newTheme);
+    localStorage.setItem('typeflow-theme', newTheme);
+  };
+
+  const setFontSize = (newSize: FontSize) => {
+    setFontSizeState(newSize);
+    localStorage.setItem('typeflow-font-size', newSize);
   };
 
   useEffect(() => {
     const root = document.documentElement;
+
+    // Apply Theme
+    root.classList.remove('light', 'dark', 'catppuccin-latte', 'catppuccin-frappe', 'catppuccin-macchiato', 'catppuccin-mocha');
+    root.removeAttribute('data-theme');
     
-    // Apply custom theme variables
-    root.style.setProperty('--theme-background', themeConfig.background);
-    root.style.setProperty('--theme-title', themeConfig.title);
-    root.style.setProperty('--theme-typebox', themeConfig.typeBoxText);
-    root.style.setProperty('--theme-stats', themeConfig.stats);
-    root.style.setProperty('--theme-keyboard-bg', themeConfig.keyboardBackground);
-    root.style.setProperty('--theme-key-bg', themeConfig.keyBackground);
-    root.style.setProperty('--theme-key-text', themeConfig.keyText);
-    root.style.setProperty('--theme-key-pressed', themeConfig.keyPressed);
-    root.style.setProperty('--theme-cursor', themeConfig.cursor);
+    let activeTheme = theme;
+    if (theme === 'system') {
+      activeTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
     
-    // Apply shadcn theme class for UI components
-    root.classList.remove('light', 'dark');
-    root.classList.add(themeConfig.isDark ? 'dark' : 'light');
+    root.classList.add(activeTheme);
+    root.setAttribute('data-theme', activeTheme);
     
-    // Update body background
-    document.body.style.backgroundColor = themeConfig.background;
-    document.body.style.color = themeConfig.typeBoxText;
-  }, [themeConfig]);
+    // Apply Font Size
+    root.style.setProperty('--typing-font-size', FONT_SIZES[fontSize]);
+    
+  }, [theme, fontSize]);
 
   return (
-    <ThemeContext.Provider value={{ currentTheme, themeConfig, setTheme }}>
+    <ThemeContext.Provider value={{ theme, fontSize, setTheme, setFontSize }}>
       {children}
     </ThemeContext.Provider>
   );

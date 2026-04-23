@@ -63,6 +63,7 @@ export const firestoreService = {
             const testData = {
                 userId,
                 wpm: result.wpm,
+                rawWpm: result.rawWpm || 0,
                 accuracy: result.accuracy,
                 correct: result.correct,
                 incorrect: result.incorrect,
@@ -71,6 +72,7 @@ export const firestoreService = {
                 charCount: result.charCount,
                 settings: result.settings,
                 wpmHistory: result.wpmHistory,
+                errorHistory: result.errorHistory || [],
                 createdAt: serverTimestamp()
             };
 
@@ -217,6 +219,7 @@ export const firestoreService = {
                 const data = doc.data() as {
                     userId: string;
                     wpm: number;
+                    rawWpm?: number;
                     accuracy: number;
                     correct: number;
                     incorrect: number;
@@ -225,6 +228,7 @@ export const firestoreService = {
                     charCount: number;
                     settings: any;
                     wpmHistory: any[];
+                    errorHistory?: any[];
                     createdAt: any;
                 };
 
@@ -234,6 +238,7 @@ export const firestoreService = {
                     id: doc.id,
                     userId: data.userId,
                     wpm: data.wpm,
+                    rawWpm: data.rawWpm || 0,
                     accuracy: data.accuracy,
                     correct: data.correct,
                     incorrect: data.incorrect,
@@ -242,6 +247,7 @@ export const firestoreService = {
                     charCount: data.charCount,
                     settings: data.settings,
                     wpmHistory: data.wpmHistory,
+                    errorHistory: data.errorHistory || [],
                     createdAt: data.createdAt
                 });
             });

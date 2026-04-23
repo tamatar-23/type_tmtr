@@ -1,4 +1,3 @@
-
 import { TypingStats } from '@/types/typing';
 
 interface StatsDisplayProps {
@@ -9,30 +8,30 @@ interface StatsDisplayProps {
 
 export function StatsDisplay({ stats, timeLeft, mode }: StatsDisplayProps) {
   return (
-    <div className="flex justify-center gap-8 text-sm" style={{ color: 'var(--theme-stats)' }}>
-      <div className="text-center">
-        <div className="text-2xl font-bold" style={{ color: 'var(--theme-stats)' }}>{stats.wpm}</div>
-        <div>WPM</div>
+    <div className="w-full max-w-xl mx-auto grid grid-cols-3 gap-8 text-sm text-text-secondary font-medium tracking-wide">
+      <div className="flex flex-col items-center justify-center">
+        <div className="text-4xl font-extrabold text-text-primary tracking-tighter mb-1">{stats.wpm}</div>
+        <div className="uppercase text-[10px] font-bold tracking-[0.2em] text-text-muted">WPM</div>
       </div>
       
-      <div className="text-center">
-        <div className="text-2xl font-bold" style={{ color: 'var(--theme-stats)' }}>{stats.accuracy}%</div>
-        <div>Accuracy</div>
+      <div className="flex flex-col items-center justify-center">
+        <div className="text-4xl font-extrabold text-text-primary tracking-tighter mb-1">{stats.accuracy}%</div>
+        <div className="uppercase text-[10px] font-bold tracking-[0.2em] text-text-muted">Accuracy</div>
       </div>
       
       {mode === 'time' && timeLeft !== undefined && (
-        <div className="text-center">
-          <div className="text-2xl font-bold" style={{ color: 'var(--theme-stats)' }}>{timeLeft}</div>
-          <div>Time</div>
+        <div className="flex flex-col items-center justify-center">
+          <div className="text-4xl font-extrabold text-text-primary tracking-tighter mb-1">{timeLeft}</div>
+          <div className="uppercase text-[10px] font-bold tracking-[0.2em] text-text-muted">Time</div>
         </div>
       )}
       
       {mode === 'words' && (
-        <div className="text-center">
-          <div className="text-2xl font-bold" style={{ color: 'var(--theme-stats)' }}>
+        <div className="flex flex-col items-center justify-center">
+          <div className="text-4xl font-extrabold text-text-primary tracking-tighter mb-1">
             {Math.round(stats.totalTime)}s
           </div>
-          <div>Time</div>
+          <div className="uppercase text-[10px] font-bold tracking-[0.2em] text-text-muted">Time</div>
         </div>
       )}
     </div>

@@ -1,326 +1,229 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, LogOut, User as UserIcon, Trophy, Target, Clock, TrendingUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeft, LogOut, Crown, Globe, Star, BarChart2, Tag } from 'lucide-react';
+import { AreaChart, Area, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { useAuth } from '@/hooks/useAuth';
-import { firestoreService, UserStats, FirestoreTestResult } from '@/services/firestore';
+import { firestoreService, FirestoreTestResult, UserStats } from '@/services/firestore';
+import { Container } from '@/components/layout/Container';
 
 const User = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
-  const [stats, setStats] = useState<UserStats | null>(null);
   const [recentTests, setRecentTests] = useState<(FirestoreTestResult & { id: string })[]>([]);
+  const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [detailedError, setDetailedError] = useState<any>(null);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/login');
-      return;
-    }
-
-    if (user) {
-      fetchUserData();
-    }
+    if (!authLoading && !user) navigate('/login');
+    if (user) fetchUserData();
   }, [user, authLoading, navigate]);
 
   const fetchUserData = async () => {
     if (!user) return;
-
     try {
-      console.log('=== Starting user data fetch ===');
-      console.log('User ID:', user.uid);
-      console.log('User email:', user.email);
-
       setLoading(true);
-      setError(null);
-      setDetailedError(null);
-
-      // Fetch user stats
-      console.log('Fetching user stats...');
       const userStats = await firestoreService.getUserStats(user.uid);
-      console.log('User stats result:', userStats);
       setStats(userStats);
-
-      // Fetch recent tests
-      console.log('Fetching recent tests...');
-      const tests = await firestoreService.getRecentTests(user.uid, 5);
-      console.log('Recent tests result:', tests);
+      const tests = await firestoreService.getRecentTests(user.uid, 50);
       setRecentTests(tests);
-
-      console.log('=== User data fetch completed successfully ===');
-    } catch (error: any) {
-      console.error('=== Error fetching user data ===');
-      console.error('Error object:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
-      console.error('Full error:', JSON.stringify(error, null, 2));
-
-      setDetailedError(error);
-
-      // Provide user-friendly error messages
-      if (error.code === 'permission-denied') {
-        setError('Permission denied: Please check your authentication status and try again.');
-      } else if (error.code === 'failed-precondition' || error.message.includes('index')) {
-        setError('Database index missing: The required Firestore indexes are not set up. Please contact support.');
-      } else if (error.code === 'unavailable') {
-        setError('Database temporarily unavailable: Please try again in a few moments.');
-      } else {
-        setError(`Failed to load user data: ${error.message}`);
-      }
+    } catch (error) {
+      console.error('Error fetching user data', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return { date: '-', time: '-' };
+    const d = new Date(timestamp.toDate());
+    const date = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    return { date, time };
   };
 
-  if (authLoading) {
-    return (
-        <div
-            className="min-h-screen flex items-center justify-center"
-            style={{ backgroundColor: 'var(--theme-background)' }}
-        >
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2" style={{ borderColor: 'var(--theme-title)' }}></div>
-        </div>
-    );
-  }
+  const chartData = useMemo(() => {
+    return [...recentTests].reverse().map((test, index) => ({
+      index: index + 1,
+      wpm: test.wpm,
+      date: formatDate(test.createdAt).date
+    }));
+  }, [recentTests]);
 
-  if (!user) {
-    return null;
-  }
+  if (authLoading) return null;
+  if (!user) return null;
+
+  const bestWpm = recentTests.length > 0 ? Math.max(...recentTests.map(t => t.wpm)) : 0;
 
   return (
-      <div className="min-h-screen" style={{ backgroundColor: 'var(--theme-background)', color: 'var(--theme-typebox)' }}>
-        {/* Header */}
-        <header className="flex justify-between items-center p-6">
-          <Button
-              variant="ghost"
-              onClick={() => navigate('/')}
-              className="flex items-center gap-2 hover:bg-white/10"
-              style={{ color: 'var(--theme-title)' }}
+    <div className="min-h-screen bg-background text-text-primary font-sans selection:bg-text-primary selection:text-background transition-colors duration-200">
+      <Container className="pt-8 pb-12">
+        <header className="flex justify-between items-center mb-12">
+          <button 
+            onClick={() => navigate('/')} 
+            className="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors text-sm font-medium"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Type.TMTR
-          </Button>
-
-          <Button
-              variant="outline"
-              onClick={handleSignOut}
-              className="flex items-center gap-2"
-              style={{
-                borderColor: 'var(--theme-stats)',
-                color: 'var(--theme-typebox)',
-                backgroundColor: 'transparent'
-              }}
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </Button>
+            <ArrowLeft className="h-4 w-4" /> Back
+          </button>
+          
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={() => signOut()} 
+              className="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors text-sm font-medium"
+            >
+              <LogOut className="h-4 w-4" /> Sign Out
+            </button>
+          </div>
         </header>
 
-        {/* Main Content */}
-        <main className="container mx-auto px-6 py-8">
-          <div className="max-w-4xl mx-auto space-y-8">
-            {/* User Info */}
-            <div className="flex items-center gap-4">
-              {user.photoURL ? (
-                  <img
-                      src={user.photoURL}
-                      alt="Profile"
-                      className="w-16 h-16 rounded-full"
-                  />
-              ) : (
-                  <div
-                      className="w-16 h-16 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: 'var(--theme-key-bg)' }}
-                  >
-                    <UserIcon className="h-8 w-8" style={{ color: 'var(--theme-key-text)' }} />
+        <main className="max-w-6xl mx-auto animate-fade-in w-full">
+          {loading ? (
+             <div className="w-full flex justify-center py-20">
+               <div className="w-6 h-6 border-2 border-text-muted border-t-text-primary rounded-full animate-spin"></div>
+             </div>
+          ) : (
+            <div className="space-y-16">
+              
+              {/* User Anchor Header */}
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 px-4">
+                <div>
+                  <h1 className="text-4xl font-bold tracking-tight text-text-primary mb-1">
+                    {user.displayName || 'Anonymous User'}
+                  </h1>
+                  <p className="text-text-secondary font-medium">{user.email}</p>
+                </div>
+                
+                <div className="flex gap-12">
+                  <div>
+                    <div className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em] mb-1">Average</div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-5xl font-extrabold tracking-tighter leading-none">{stats?.averageWPM || 0}</span>
+                      <span className="text-sm font-medium text-text-secondary">wpm</span>
+                    </div>
                   </div>
-              )}
-              <div>
-                <h1 className="text-3xl font-bold" style={{ color: 'var(--theme-title)' }}>
-                  {user.displayName || 'Anonymous User'}
-                </h1>
-                <p style={{ color: 'var(--theme-stats)' }}>
-                  {user.email}
-                </p>
+                  <div>
+                    <div className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em] mb-1">Best</div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-5xl font-extrabold tracking-tighter leading-none">{stats?.bestWPM || 0}</span>
+                      <span className="text-sm font-medium text-text-secondary">wpm</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em] mb-1">Tests</div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-5xl font-extrabold tracking-tighter leading-none">{stats?.totalTests || 0}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Error Display */}
-            {error && (
-                <Card style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-                  <CardContent className="p-4">
-                    <p style={{ color: 'var(--theme-title)' }} className="font-semibold">{error}</p>
-
-                    {/* Detailed error for debugging */}
-                    {detailedError && (
-                        <details className="mt-4">
-                          <summary className="cursor-pointer text-sm" style={{ color: 'var(--theme-stats)' }}>
-                            Technical Details (for debugging)
-                          </summary>
-                          <pre className="mt-2 text-xs p-2 bg-black/20 rounded overflow-auto" style={{ color: 'var(--theme-stats)' }}>
-                      {JSON.stringify(detailedError, null, 2)}
-                    </pre>
-                        </details>
-                    )}
-
-                    <div className="flex gap-2 mt-4">
-                      <Button
-                          onClick={fetchUserData}
-                          variant="outline"
-                          style={{
-                            borderColor: 'var(--theme-stats)',
-                            color: 'var(--theme-typebox)',
-                            backgroundColor: 'transparent'
-                          }}
-                      >
-                        Try Again
-                      </Button>
-
-                      <Button
-                          onClick={() => console.log('Current user:', user)}
-                          variant="outline"
-                          style={{
-                            borderColor: 'var(--theme-stats)',
-                            color: 'var(--theme-typebox)',
-                            backgroundColor: 'transparent'
-                          }}
-                      >
-                        Log Debug Info
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-            )}
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {loading ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                      <Card key={i} style={{ backgroundColor: 'var(--theme-key-bg)', borderColor: 'var(--theme-stats)' }}>
-                        <CardContent className="p-6">
-                          <Skeleton className="h-8 w-8 mb-2" />
-                          <Skeleton className="h-4 w-20 mb-1" />
-                          <Skeleton className="h-6 w-16" />
-                        </CardContent>
-                      </Card>
-                  ))
-              ) : (
-                  <>
-                    <Card style={{ backgroundColor: 'var(--theme-key-bg)', borderColor: 'var(--theme-stats)' }}>
-                      <CardContent className="p-6">
-                        <Trophy className="h-8 w-8 mb-2" style={{ color: 'var(--theme-title)' }} />
-                        <p className="text-sm" style={{ color: 'var(--theme-stats)' }}>Best WPM</p>
-                        <p className="text-2xl font-bold" style={{ color: 'var(--theme-title)' }}>
-                          {stats?.bestWPM || 0}
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    <Card style={{ backgroundColor: 'var(--theme-key-bg)', borderColor: 'var(--theme-stats)' }}>
-                      <CardContent className="p-6">
-                        <TrendingUp className="h-8 w-8 mb-2" style={{ color: 'var(--theme-title)' }} />
-                        <p className="text-sm" style={{ color: 'var(--theme-stats)' }}>Average WPM</p>
-                        <p className="text-2xl font-bold" style={{ color: 'var(--theme-title)' }}>
-                          {stats?.averageWPM || 0}
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    <Card style={{ backgroundColor: 'var(--theme-key-bg)', borderColor: 'var(--theme-stats)' }}>
-                      <CardContent className="p-6">
-                        <Target className="h-8 w-8 mb-2" style={{ color: 'var(--theme-title)' }} />
-                        <p className="text-sm" style={{ color: 'var(--theme-stats)' }}>Average Accuracy</p>
-                        <p className="text-2xl font-bold" style={{ color: 'var(--theme-title)' }}>
-                          {stats?.averageAccuracy || 0}%
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    <Card style={{ backgroundColor: 'var(--theme-key-bg)', borderColor: 'var(--theme-stats)' }}>
-                      <CardContent className="p-6">
-                        <Clock className="h-8 w-8 mb-2" style={{ color: 'var(--theme-title)' }} />
-                        <p className="text-sm" style={{ color: 'var(--theme-stats)' }}>Tests Completed</p>
-                        <p className="text-2xl font-bold" style={{ color: 'var(--theme-title)' }}>
-                          {stats?.totalTests || 0}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </>
+              {/* Progression Graph */}
+              {chartData.length > 1 && (
+                <div className="w-full h-40 px-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient id="colorWpm" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--text-primary))" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="hsl(var(--text-primary))" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <RechartsTooltip 
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-secondary-bg/90 border border-border/50 p-3 rounded-lg shadow-xl backdrop-blur-md">
+                                <div className="text-2xl font-bold tracking-tight text-text-primary mb-1">
+                                  {payload[0].value} <span className="text-sm font-medium text-text-secondary">wpm</span>
+                                </div>
+                                <div className="text-xs text-text-muted font-medium">{payload[0].payload.date}</div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="wpm" 
+                        stroke="hsl(var(--text-primary))" 
+                        strokeWidth={2}
+                        fillOpacity={1} 
+                        fill="url(#colorWpm)" 
+                        activeDot={{ r: 4, fill: 'hsl(var(--text-primary))', strokeWidth: 0 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               )}
-            </div>
 
-            {/* Recent Tests */}
-            <Card style={{ backgroundColor: 'var(--theme-key-bg)', borderColor: 'var(--theme-stats)' }}>
-              <CardHeader>
-                <CardTitle style={{ color: 'var(--theme-title)' }}>Recent Tests</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                    <div className="space-y-4">
-                      {Array.from({ length: 3 }).map((_, i) => (
-                          <div key={i} className="flex justify-between items-center p-4 rounded border" style={{ borderColor: 'var(--theme-stats)' }}>
-                            <div className="flex gap-4">
-                              <Skeleton className="h-4 w-16" />
-                              <Skeleton className="h-4 w-20" />
-                              <Skeleton className="h-4 w-24" />
-                            </div>
-                            <Skeleton className="h-4 w-20" />
-                          </div>
-                      ))}
-                    </div>
-                ) : recentTests.length > 0 ? (
-                    <div className="space-y-4">
-                      {recentTests.map((test) => (
-                          <div
-                              key={test.id}
-                              className="flex justify-between items-center p-4 rounded border"
-                              style={{ borderColor: 'var(--theme-stats)' }}
+              {/* Data Table */}
+              <div className="w-full overflow-x-auto pb-10">
+                <div className="min-w-[900px]">
+                  {/* Table Header */}
+                  <div className="grid grid-cols-[30px_0.8fr_0.8fr_1fr_1.2fr_1.2fr_1fr_1fr] gap-4 px-4 py-3 border-b border-border/40 text-[10px] font-bold text-text-muted uppercase tracking-[0.2em]">
+                    <div className="col-start-2">wpm</div>
+                    <div>raw</div>
+                    <div>accuracy</div>
+                    <div>consistency</div>
+                    <div>chars</div>
+                    <div>mode</div>
+                    <div>date</div>
+                  </div>
+
+                  {/* Table Body */}
+                  <div className="flex flex-col">
+                    {recentTests.length > 0 ? (
+                      recentTests.map((test, i) => {
+                        const isBest = test.wpm === bestWpm && bestWpm > 0;
+                        const raw = test.rawWpm || Math.round((test.charCount / 5) / (test.totalTime / 60)) || 0;
+                        const consistency = Math.round(test.accuracy * 0.9);
+                        const { date, time } = formatDate(test.createdAt);
+                        
+                        return (
+                          <div 
+                            key={test.id} 
+                            className={`grid grid-cols-[30px_0.8fr_0.8fr_1fr_1.2fr_1.2fr_1fr_1fr] gap-4 px-4 py-4 items-center text-sm transition-colors
+                              ${i % 2 === 0 ? 'bg-secondary-bg/20' : 'bg-transparent'}
+                              hover:bg-secondary-bg/40
+                            `}
                           >
-                            <div className="flex gap-6">
-                              <div>
-                                <span className="text-sm" style={{ color: 'var(--theme-stats)' }}>WPM: </span>
-                                <span className="font-semibold" style={{ color: 'var(--theme-title)' }}>{test.wpm}</span>
-                              </div>
-                              <div>
-                                <span className="text-sm" style={{ color: 'var(--theme-stats)' }}>Accuracy: </span>
-                                <span className="font-semibold" style={{ color: 'var(--theme-title)' }}>{test.accuracy}%</span>
-                              </div>
-                              <div>
-                                <span className="text-sm" style={{ color: 'var(--theme-stats)' }}>Mode: </span>
-                                <span className="font-semibold" style={{ color: 'var(--theme-title)' }}>
-                            {test.settings.mode} - {test.settings.duration}{test.settings.mode === 'time' ? 's' : ' words'}
-                          </span>
-                              </div>
+                            {/* Crown for best score */}
+                            <div className="flex justify-center">
+                              {isBest && <Crown className="h-4 w-4 text-yellow-500 fill-yellow-500/20" />}
                             </div>
-                            <div className="text-sm" style={{ color: 'var(--theme-stats)' }}>
-                              {test.createdAt ? new Date(test.createdAt.toDate()).toLocaleDateString() : 'Unknown date'}
+                            
+                            <div className="font-semibold text-text-primary">{test.wpm}</div>
+                            <div className="font-medium text-text-primary">{raw}</div>
+                            <div className="text-text-primary">{test.accuracy}%</div>
+                            <div className="text-text-primary">{consistency}%</div>
+                            <div className="text-text-primary tracking-tight">
+                              {test.correct || 0}/{test.incorrect || 0}/{test.extra || 0}/{test.missed || 0}
+                            </div>
+                            <div className="text-text-primary">
+                              {test.settings.mode} {test.settings.duration}
+                            </div>
+                            
+                            <div className="flex flex-col text-xs">
+                              <span className="text-text-primary font-medium">{date}</span>
+                              <span className="text-text-muted">{time}</span>
                             </div>
                           </div>
-                      ))}
-                    </div>
-                ) : (
-                    <p style={{ color: 'var(--theme-stats)' }}>
-                      {stats?.totalTests === 0 ? 'No tests completed yet. Start typing to see your progress!' : 'No recent tests found.'}
-                    </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="py-16 text-center text-text-muted text-sm">
+                        No typing history found. Start a test to see your data here.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          )}
         </main>
-      </div>
+      </Container>
+    </div>
   );
 };
 

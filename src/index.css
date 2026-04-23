@@ -1,66 +1,181 @@
-
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap');
-
-:root {
-  --theme-background: #2B2B2B;
-  --theme-title: #FFFFFF;
-  --theme-typebox: #D4D4D4;
-  --theme-stats: #FFFFFF;
-  --theme-keyboard-bg: transparent;
-  --theme-key-bg: #404040;
-  --theme-key-text: #FFFFFF;
-  --theme-key-pressed: #606060;
-  --theme-cursor: #FFFFFF;
-}
-
 @layer base {
   :root {
+    /* Base typography */
+    --typing-font-size: 20px;
+
+    /* Light Theme Tokens */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --secondary-bg: 0 0% 97%;
+    --border: 0 0% 90%;
+    
+    --text-primary: 0 0% 7%;
+    --text-secondary: 0 0% 47%;
+    --text-muted: 0 0% 70%;
+    
+    --error: 0 84% 60%;
+
+    /* Standard Tailwind/shadcn fallbacks using our new colors if needed */
+    --foreground: var(--text-primary);
+    --card: var(--secondary-bg);
+    --card-foreground: var(--text-primary);
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    --popover-foreground: var(--text-primary);
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: var(--secondary-bg);
+    --secondary-foreground: var(--text-primary);
+    --muted: 0 0% 96%;
+    --muted-foreground: var(--text-secondary);
+    --accent: var(--secondary-bg);
+    --accent-foreground: var(--text-primary);
+    --destructive: var(--error);
+    --destructive-foreground: 0 0% 98%;
+    --ring: 0 0% 7%;
+    --radius: 0.75rem; /* 12px */
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+  /* Support dark mode directly via class or data-theme */
+  .dark, [data-theme='dark'] {
+    /* Dark Theme Tokens */
+    --background: 0 0% 6%;
+    --secondary-bg: 0 0% 10%;
+    --border: 0 0% 16%;
+    
+    --text-primary: 0 0% 96%;
+    --text-secondary: 0 0% 63%;
+    --text-muted: 0 0% 40%;
+    
+    --error: 0 84% 60%;
+
+    --foreground: var(--text-primary);
+    --card: var(--secondary-bg);
+    --card-foreground: var(--text-primary);
+    --popover: 0 0% 6%;
+    --popover-foreground: var(--text-primary);
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: var(--secondary-bg);
+    --secondary-foreground: var(--text-primary);
+    --muted: 0 0% 15%;
+    --muted-foreground: var(--text-secondary);
+    --accent: var(--secondary-bg);
+    --accent-foreground: var(--text-primary);
+    --destructive: var(--error);
+    --destructive-foreground: 0 0% 98%;
+    --ring: 0 0% 83.9%;
+  }
+
+  [data-theme='catppuccin-mocha'] {
+    --background: 240 21% 15%;
+    --secondary-bg: 240 21% 12%;
+    --border: 237 16% 23%;
+    --text-primary: 226 64% 88%;
+    --text-secondary: 228 24% 72%;
+    --text-muted: 231 11% 47%;
+    --error: 343 81% 75%;
+    
+    --foreground: var(--text-primary);
+    --card: var(--secondary-bg);
+    --card-foreground: var(--text-primary);
+    --popover: var(--background);
+    --popover-foreground: var(--text-primary);
+    --primary: var(--text-primary);
+    --primary-foreground: var(--background);
+    --secondary: var(--secondary-bg);
+    --secondary-foreground: var(--text-primary);
+    --muted: 237 16% 23%;
+    --muted-foreground: var(--text-secondary);
+    --accent: var(--secondary-bg);
+    --accent-foreground: var(--text-primary);
+    --destructive: var(--error);
+    --destructive-foreground: var(--background);
+    --ring: 228 24% 72%;
+  }
+
+  [data-theme='catppuccin-macchiato'] {
+    --background: 232 23% 18%;
+    --secondary-bg: 233 23% 15%;
+    --border: 236 23% 12%;
+    --text-primary: 227 70% 88%;
+    --text-secondary: 227 27% 72%;
+    --text-muted: 230 13% 49%;
+    --error: 351 74% 73%;
+    
+    --foreground: var(--text-primary);
+    --card: var(--secondary-bg);
+    --card-foreground: var(--text-primary);
+    --popover: var(--background);
+    --popover-foreground: var(--text-primary);
+    --primary: var(--text-primary);
+    --primary-foreground: var(--background);
+    --secondary: var(--secondary-bg);
+    --secondary-foreground: var(--text-primary);
+    --muted: 236 23% 12%;
+    --muted-foreground: var(--text-secondary);
+    --accent: var(--secondary-bg);
+    --accent-foreground: var(--text-primary);
+    --destructive: var(--error);
+    --destructive-foreground: var(--background);
+    --ring: 227 27% 72%;
+  }
+
+  [data-theme='catppuccin-frappe'] {
+    --background: 229 19% 23%;
+    --secondary-bg: 231 19% 20%;
+    --border: 229 19% 17%;
+    --text-primary: 227 68% 87%;
+    --text-secondary: 228 29% 73%;
+    --text-muted: 229 13% 52%;
+    --error: 359 68% 71%;
+    
+    --foreground: var(--text-primary);
+    --card: var(--secondary-bg);
+    --card-foreground: var(--text-primary);
+    --popover: var(--background);
+    --popover-foreground: var(--text-primary);
+    --primary: var(--text-primary);
+    --primary-foreground: var(--background);
+    --secondary: var(--secondary-bg);
+    --secondary-foreground: var(--text-primary);
+    --muted: 229 19% 17%;
+    --muted-foreground: var(--text-secondary);
+    --accent: var(--secondary-bg);
+    --accent-foreground: var(--text-primary);
+    --destructive: var(--error);
+    --destructive-foreground: var(--background);
+    --ring: 228 29% 73%;
+  }
+
+  [data-theme='catppuccin-latte'] {
+    --background: 220 23% 95%;
+    --secondary-bg: 220 22% 92%;
+    --border: 223 16% 83%;
+    --text-primary: 234 16% 35%;
+    --text-secondary: 233 10% 47%;
+    --text-muted: 228 11% 65%;
+    --error: 347 87% 44%;
+    
+    --foreground: var(--text-primary);
+    --card: var(--secondary-bg);
+    --card-foreground: var(--text-primary);
+    --popover: var(--background);
+    --popover-foreground: var(--text-primary);
+    --primary: var(--text-primary);
+    --primary-foreground: var(--background);
+    --secondary: var(--secondary-bg);
+    --secondary-foreground: var(--text-primary);
+    --muted: 223 16% 83%;
+    --muted-foreground: var(--text-secondary);
+    --accent: var(--secondary-bg);
+    --accent-foreground: var(--text-primary);
+    --destructive: var(--error);
+    --destructive-foreground: var(--background);
+    --ring: 233 10% 47%;
   }
 }
 
@@ -70,10 +185,12 @@
   }
 
   body {
-    background-color: var(--theme-background);
-    color: var(--theme-typebox);
-    font-family: 'Atkinson Hyperlegible', sans-serif;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    background-color: hsl(var(--background));
+    color: hsl(var(--text-primary));
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.15s ease-out, color 0.15s ease-out;
   }
 }
 
@@ -81,18 +198,16 @@
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 @keyframes scale-in {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.98);
   }
   to {
     opacity: 1;
@@ -100,12 +215,21 @@
   }
 }
 
+@keyframes caret-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-caret-blink {
+  animation: caret-blink 1.1s ease-in-out infinite;
+}
+
 .animate-fade-in {
-  animation: fade-in 0.6s ease-out forwards;
+  animation: fade-in 0.15s ease-out forwards;
 }
 
 .animate-scale-in {
-  animation: scale-in 0.4s ease-out forwards;
+  animation: scale-in 0.15s ease-out forwards;
   opacity: 0;
   animation-fill-mode: forwards;
 }

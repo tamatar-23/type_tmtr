@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { TestSettings } from '@/types/typing';
@@ -14,69 +13,43 @@ export function ModeSelector({ settings, onSettingsChange, disabled }: ModeSelec
   const wordOptions = [10, 25, 50, 100];
 
   return (
-    <div 
-      className="flex items-center gap-4 rounded-lg p-2 border"
-      style={{ 
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderColor: 'var(--theme-stats)',
-        borderWidth: '1px'
-      }}
-    >
+    <div className="flex items-center gap-3 rounded-2xl p-1.5 bg-secondary-bg border border-border/50 shadow-sm backdrop-blur-sm transition-opacity">
       {/* Mode Toggle */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center bg-background rounded-xl p-1 shadow-inner border border-border/30">
         <Button
-          variant="ghost"
+          variant={settings.mode === 'time' ? 'primary' : 'ghost'}
           size="sm"
           onClick={() => onSettingsChange({ ...settings, mode: 'time', duration: 30 })}
           disabled={disabled}
-          className="px-4 h-8 hover:bg-transparent font-semibold"
-          style={{
-            backgroundColor: settings.mode === 'time' ? 'var(--theme-key-pressed)' : 'transparent',
-            color: settings.mode === 'time' ? 'var(--theme-title)' : 'var(--theme-typebox)',
-            borderColor: settings.mode === 'time' ? 'var(--theme-title)' : 'transparent'
-          }}
+          className="h-7 px-4 rounded-lg text-xs"
         >
           Time
         </Button>
         <Button
-          variant="ghost"
+          variant={settings.mode === 'words' ? 'primary' : 'ghost'}
           size="sm"
           onClick={() => onSettingsChange({ ...settings, mode: 'words', duration: 50 })}
           disabled={disabled}
-          className="px-4 h-8 hover:bg-transparent font-semibold"
-          style={{
-            backgroundColor: settings.mode === 'words' ? 'var(--theme-key-pressed)' : 'transparent',
-            color: settings.mode === 'words' ? 'var(--theme-title)' : 'var(--theme-typebox)',
-            borderColor: settings.mode === 'words' ? 'var(--theme-title)' : 'transparent'
-          }}
+          className="h-7 px-4 rounded-lg text-xs"
         >
           Words
         </Button>
       </div>
 
       {/* Separator */}
-      <Separator 
-        orientation="vertical" 
-        className="h-8" 
-        style={{ backgroundColor: 'var(--theme-stats)', opacity: 0.3 }}
-      />
+      <Separator orientation="vertical" className="h-5 bg-border/50" />
 
       {/* Duration Options */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center bg-background rounded-xl p-1 shadow-inner border border-border/30 gap-0.5">
         {settings.mode === 'time' ? (
           timeOptions.map((time) => (
             <Button
               key={time}
-              variant="ghost"
+              variant={settings.duration === time ? 'primary' : 'ghost'}
               size="sm"
               onClick={() => onSettingsChange({ ...settings, duration: time })}
               disabled={disabled}
-              className="px-4 h-8 hover:bg-transparent"
-              style={{
-                backgroundColor: settings.duration === time ? 'var(--theme-key-pressed)' : 'transparent',
-                color: settings.duration === time ? 'var(--theme-title)' : 'var(--theme-typebox)',
-                borderColor: settings.duration === time ? 'var(--theme-title)' : 'transparent'
-              }}
+              className="h-7 w-10 p-0 rounded-lg text-xs"
             >
               {time}
             </Button>
@@ -85,16 +58,11 @@ export function ModeSelector({ settings, onSettingsChange, disabled }: ModeSelec
           wordOptions.map((words) => (
             <Button
               key={words}
-              variant="ghost"
+              variant={settings.duration === words ? 'primary' : 'ghost'}
               size="sm"
               onClick={() => onSettingsChange({ ...settings, duration: words })}
               disabled={disabled}
-              className="px-4 h-8 hover:bg-transparent"
-              style={{
-                backgroundColor: settings.duration === words ? 'var(--theme-key-pressed)' : 'transparent',
-                color: settings.duration === words ? 'var(--theme-title)' : 'var(--theme-typebox)',
-                borderColor: settings.duration === words ? 'var(--theme-title)' : 'transparent'
-              }}
+              className="h-7 w-10 p-0 rounded-lg text-xs"
             >
               {words}
             </Button>

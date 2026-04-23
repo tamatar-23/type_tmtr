@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Github } from 'lucide-react';
+import { User, Github, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { TypingArea } from '@/components/TypingArea';
+import { TypingArea } from '@/components/features/TypingArea';
 import { ModeSelector } from '@/components/ModeSelector';
 import { StatsDisplay } from '@/components/StatsDisplay';
 import { Keyboard } from '@/components/Keyboard';
@@ -10,176 +10,139 @@ import { ResultsDisplay } from '@/components/ResultsDisplay';
 import { useTypingTest } from '@/hooks/useTypingTest';
 import { useAuth } from '@/hooks/useAuth';
 import { TestSettings } from '@/types/typing';
-import { ThemeSelector } from '@/components/ThemeSelector';
+import { Container } from '@/components/layout/Container';
+import { SettingsModal } from '@/components/features/SettingsModal';
 
-// CONSISTENT localStorage key - same as in useTypingTest
 const SETTINGS_STORAGE_KEY = 'typeflow-settings';
 
-// Get saved settings or default
 const getSavedSettings = (): TestSettings => {
   const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      // Validate the parsed settings to ensure they have the correct structure
       if (parsed && typeof parsed.mode === 'string' && typeof parsed.duration === 'number') {
         return parsed;
       }
-    } catch {
-      // Fall back to default if parsing fails
-    }
+    } catch {}
   }
-  return {
-    mode: 'time',
-    duration: 30,
-    difficulty: 'easy'
-  };
+  return { mode: 'time', duration: 30, difficulty: 'easy', stopOnError: false };
 };
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [settings, setSettings] = useState<TestSettings>(getSavedSettings());
-  const [showResults, setShowResults] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const {
-    text,
-    userInput,
-    characters,
-    currentIndex,
+    words,
+    currentWordIndex,
+    currentCharIndex,
     isActive,
     isFinished,
     timeLeft,
     stats,
-    handleInput,
-    handleSpaceSkip,
+    handleKeyDown,
     resetTest,
     getResult
   } = useTypingTest(settings);
 
-  // Save settings whenever they change
   useEffect(() => {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
   }, [settings]);
 
-  // Handle test completion
-  useEffect(() => {
-    if (isFinished) {
-      console.log('Test finished, showing results');
-      setShowResults(true);
-    }
-  }, [isFinished]);
-
   const handleRestart = () => {
-    setShowResults(false);
     resetTest();
   };
 
-  const handleUserIconClick = () => {
-    if (loading) return;
-
-    if (user) {
-      navigate('/user');
-    } else {
-      navigate('/login');
-    }
-  };
-
   return (
-      <div className="min-h-screen text-foreground" style={{ backgroundColor: 'var(--theme-background)' }}>
-        {/* Header with improved visibility */}
-        <header className="flex justify-between items-center p-6">
-          <Link to="/" className="text-2xl font-bold" style={{ color: 'var(--theme-title)' }}>
+    <div className="min-h-screen flex flex-col bg-background text-text-primary selection:bg-text-primary selection:text-background font-sans transition-colors duration-200">
+      <Container className="flex-1 flex flex-col pt-8 pb-12">
+        <header className="flex justify-between items-center mb-12">
+          <Link to="/" className="text-2xl font-bold tracking-tight text-text-primary hover:opacity-80 transition-opacity">
             Type.TMTR
           </Link>
-          <Button
+          <div className="flex gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)}>
+              <Settings className="h-5 w-5" />
+            </Button>
+            <Button
               variant="ghost"
               size="icon"
-              className="hover:bg-white/10"
-              style={{ color: 'var(--theme-title)' }}
-              onClick={handleUserIconClick}
-          >
-            <User className="h-5 w-5" />
-          </Button>
+              onClick={() => !loading && navigate(user ? '/user' : '/login')}
+            >
+              <User className="h-5 w-5" />
+            </Button>
+          </div>
         </header>
 
-        {/* Main Content */}
-        <main className="container mx-auto px-8 py-8">
-          <div className="max-w-5xl mx-auto space-y-8">
-            {showResults ? (
-                <ResultsDisplay result={getResult()} onRestart={handleRestart} />
-            ) : (
-                <>
-                  {/* Top Stats and Controls */}
-                  <div className="flex justify-center items-center gap-8">
-                    {/* Mode Selector - only show when not active and not finished */}
-                    {!isActive && !isFinished && (
-                        <ModeSelector
-                            settings={settings}
-                            onSettingsChange={setSettings}
-                            disabled={isActive}
-                        />
-                    )}
+        <main className="flex-1 flex flex-col items-center justify-center w-full max-w-4xl mx-auto">
+          {isFinished ? (
+             <ResultsDisplay result={getResult()} onRestart={handleRestart} />
+          ) : (
+            <div className="w-full flex flex-col items-center gap-8">
+              {!isActive && (
+                <ModeSelector
+                  settings={settings}
+                  onSettingsChange={(s) => {
+                    setSettings(s);
+                    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(s));
+                  }}
+                  disabled={isActive}
+                />
+              )}
+              
+              {(isActive) && (
+                <StatsDisplay stats={stats} timeLeft={timeLeft} mode={settings.mode} />
+              )}
+              
+              <div className="w-full relative mt-4">
+                <TypingArea 
+                  words={words}
+                  currentWordIndex={currentWordIndex}
+                  currentCharIndex={currentCharIndex}
+                  onKeyDown={handleKeyDown}
+                  isFinished={isFinished}
+                />
+              </div>
 
-                    {/* Stats Display - show when active or finished */}
-                    {(isActive || isFinished) && (
-                        <StatsDisplay
-                            stats={stats}
-                            timeLeft={timeLeft}
-                            mode={settings.mode}
-                        />
-                    )}
-                  </div>
+              <div className="mt-8">
+                <Keyboard />
+              </div>
 
-                  {/* Typing Area - better centered with more padding */}
-                  <div className="flex justify-center px-6">
-                    <div className="w-full max-w-4xl">
-                      <TypingArea
-                          text={text}
-                          characters={characters}
-                          currentIndex={currentIndex}
-                          userInput={userInput}
-                          onInput={handleInput}
-                          onSpaceSkip={handleSpaceSkip}
-                          isFinished={isFinished}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Keyboard */}
-                  <div className="flex justify-center px-6">
-                    <Keyboard />
-                  </div>
-
-                  {/* Action Buttons - only show restart during active typing */}
-                  {isActive && !isFinished && (
-                      <div className="flex justify-center">
-                        <Button onClick={handleRestart} variant="outline" className="bg-transparent border-gray-600 text-gray-400 hover:text-white hover:border-white">
-                          Restart (Tab)
-                        </Button>
-                      </div>
-                  )}
-                </>
-            )}
-          </div>
+              {isActive && (
+                <div className="flex justify-center mt-8 animate-fade-in">
+                  <Button variant="ghost" onClick={handleRestart} className="text-text-muted hover:text-text-primary">
+                    Restart (Tab)
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </main>
-
-        {/* Footer with improved visibility */}
-        <footer className="fixed bottom-0 left-0 right-0 flex justify-between items-center p-6">
+        
+        <footer className="mt-auto flex justify-center items-center py-6 text-text-muted">
           <a
-              href="https://github.com/tamatar-23/type_tmtr"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:opacity-80"
-              style={{ color: 'var(--theme-stats)' }}
+            href="https://github.com/tamatar-23/type_tmtr"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-text-primary transition-colors flex items-center gap-2 text-sm"
           >
-            <Github className="h-5 w-5" />
+            <Github className="h-4 w-4" /> Source
           </a>
-          <div className="flex items-center gap-4">
-            <ThemeSelector />
-          </div>
         </footer>
-      </div>
+      </Container>
+      
+      <SettingsModal 
+        isOpen={showSettings} 
+        onClose={() => setShowSettings(false)} 
+        settings={settings}
+        onSettingsChange={(s) => {
+          setSettings(s);
+          localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(s));
+        }}
+      />
+    </div>
   );
 };
 
